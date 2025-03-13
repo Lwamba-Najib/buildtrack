@@ -1,0 +1,6 @@
+# Ignore frontend configuration
+frontend/src/config.js
+
+# Ignore backend environment and sensitive configuration files
+backend/.env
+backend/config/cors.php

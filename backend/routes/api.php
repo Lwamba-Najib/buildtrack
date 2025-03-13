@@ -1,0 +1,194 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\BrandController;
+use App\Http\Controllers\StockController;
+use App\Http\Controllers\TrashController;
+use App\Http\Controllers\AccessController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\AddressBookController;
+use App\Http\Controllers\MeasurementController;
+use App\Http\Controllers\StockBalanceController;
+use App\Http\Controllers\SalesController;
+use App\Http\Controllers\EmailSettingsController;
+use App\Http\Controllers\ApplicationLogController;
+use App\Http\Controllers\GeneralSettingsController;
+use App\Http\Controllers\SecuritySettingsController;
+use Laravel\Sanctum\Http\Controllers\CsrfCookieController;
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "api" middleware group. Make something great!
+|
+*/
+
+########################### CSRF Token Route ###########################
+Route::get('/sanctum/csrf-cookie', [CsrfCookieController::class, 'show']);
+
+########################### PUBLIC ROUTES ###########################
+Route::post('/login', [AccessController::class, 'authenticate']);
+Route::post('/verifyotp', [AccessController::class, 'verifyOTP']);
+Route::post('/getotp', [AccessController::class, 'getOTP']);
+Route::post('/forgotpassword', [AccessController::class, 'forgotpassword']);
+Route::get('getlogofavicon', [GeneralSettingsController::class, 'index']);
+
+########################### PROTECTED ROUTES ###########################
+Route::middleware('auth:sanctum')->group(function () {
+    // Access Routes
+    Route::get('/session', [AccessController::class, 'authenticated']);
+    Route::get('/loggedinuser', [AccessController::class, 'loggedinuser']);
+    Route::post('/generateuserotp', [AccessController::class, 'generateUserOTP']);
+    Route::post('/logout', [AccessController::class, 'logout']);
+
+    // Home Routes
+    Route::get('home', [HomeController::class, 'index']);
+
+    // Profile Routes
+    Route::get('profile', [ProfileController::class, 'index']);
+
+    // Dashboard Routes
+    Route::get('dashboard', [DashboardController::class, 'index']);
+
+    // User Routes
+    Route::get('userlist', [UserController::class, 'index']);
+    Route::get('usergender', [UserController::class, 'userGender']);
+    Route::get('userroles', [UserController::class, 'userRoles']);
+    Route::post('userstore', [UserController::class, 'store']);
+    Route::get('userxlsx', [UserController::class, 'xlsx']);
+    Route::get('usercsv', [UserController::class, 'csv']);
+    Route::get('usershow/{user}', [UserController::class, 'show']);
+    Route::get('userpdf/{user}', [UserController::class, 'pdf']);
+    Route::put('userupdate/{user}', [UserController::class, 'update']);
+    Route::delete('userdelete/{user}', [UserController::class, 'destroy']);
+    Route::delete('usersdelete', [UserController::class, 'massDestroy']);
+    Route::post('userchangepassword', [UserController::class, 'userChangePassword']);
+    Route::get('userpersonaldetails', [UserController::class, 'userPersonalDetails']);
+    Route::put('userlockunlock/{user}', [UserController::class, 'userLockUnlock']);
+
+    // Role Routes
+    Route::get('rolelist', [RoleController::class, 'index']);
+    Route::post('rolestore', [RoleController::class, 'store']);
+    Route::get('access/{role}', [RoleController::class, 'access']);
+    Route::get('roleshow/{role}', [RoleController::class, 'show']);
+    Route::put('roleupdate/{role}', [RoleController::class, 'update']);
+    Route::delete('roledelete/{role}', [RoleController::class, 'destroy']);
+    Route::delete('rolesdelete', [RoleController::class, 'massDestroy']);
+
+    // Permission Routes
+    Route::post('assignmenus/{role}', [PermissionController::class, 'assignMenus']);
+    Route::get('assignedmenus/{role}', [PermissionController::class, 'assignedMenus']);
+    Route::post('accessmenus', [PermissionController::class, 'accessMenu']);
+
+    // Category Routes
+    Route::get('categorylist', [CategoryController::class, 'index']);
+    Route::post('categorystore', [CategoryController::class, 'store']);
+    Route::get('categoryshow/{category}', [CategoryController::class, 'show']);
+    Route::put('categoryupdate/{category}', [CategoryController::class, 'update']);
+    Route::delete('categorydelete/{category}', [CategoryController::class, 'destroy']);
+    Route::delete('categoriesdelete', [CategoryController::class, 'massDestroy']);
+    Route::get('getcategories', [CategoryController::class, 'getCategories']);
+
+    // Product  Routes
+    Route::get('productlist', [ProductController::class, 'index']);
+    Route::post('productstore', [ProductController::class, 'store']);
+    Route::get('productshow/{product}', [ProductController::class, 'show']);
+    Route::put('productupdate/{product}', [ProductController::class, 'update']);
+    Route::delete('productdelete/{product}', [ProductController::class, 'destroy']);
+    Route::delete('productsdelete', [ProductController::class, 'massDestroy']);
+    Route::get('getproducts', [ProductController::class, 'getProducts']);
+
+    // Brand Routes
+    Route::get('brandlist', [BrandController::class, 'index']);
+    Route::post('brandstore', [BrandController::class, 'store']);
+    Route::get('brandshow/{brand}', [BrandController::class, 'show']);
+    Route::put('brandupdate/{brand}', [BrandController::class, 'update']);
+    Route::delete('branddelete/{brand}', [BrandController::class, 'destroy']);
+    Route::delete('brandsdelete', [BrandController::class, 'massDestroy']);
+    Route::get('getbrands', [BrandController::class, 'getBrands']);
+    Route::get('getbrandsbyproduct/{productId}', [BrandController::class, 'getBrandsByProductId']);
+
+    // Measurement Routes
+    Route::get('measurementlist', [MeasurementController::class, 'index']);
+    Route::post('measurementstore', [MeasurementController::class, 'store']);
+    Route::get('measurementshow/{measurement}', [MeasurementController::class, 'show']);
+    Route::put('measurementupdate/{measurement}', [MeasurementController::class, 'update']);
+    Route::delete('measurementdelete/{measurement}', [MeasurementController::class, 'destroy']);
+    Route::delete('measurementsdelete', [MeasurementController::class, 'massDestroy']);
+    Route::get('getmeasurements', [MeasurementController::class, 'getMeasurements']);
+
+    // Supplier Routes
+    Route::get('supplierlist', [SupplierController::class, 'index']);
+    Route::post('supplierstore', [SupplierController::class, 'store']);
+    Route::get('suppliershow/{supplier}', [SupplierController::class, 'show']);
+    Route::put('supplierupdate/{supplier}', [SupplierController::class, 'update']);
+    Route::delete('supplierdelete/{supplier}', [SupplierController::class, 'destroy']);
+    Route::delete('suppliersdelete', [SupplierController::class, 'massDestroy']);
+    Route::get('getsuppliers', [SupplierController::class, 'getSuppliers']);
+    Route::get('supplierxlsx', [SupplierController::class, 'xlsx']);
+    Route::get('suppliercsv', [SupplierController::class, 'csv']);
+
+    // Stock Routes
+    Route::get('stocklist', [StockController::class, 'index']);
+    Route::post('stockstore', [StockController::class, 'store']);
+    Route::get('stockshow/{stock}', [StockController::class, 'show']);
+    Route::put('stockupdate/{stock}', [StockController::class, 'update']);
+    Route::delete('stockdelete/{stock}', [StockController::class, 'destroy']);
+    Route::delete('stocksdelete', [StockController::class, 'massDestroy']);
+    Route::get('stockxlsx', [StockController::class, 'xlsx']);
+    Route::get('stockcsv', [StockController::class, 'csv']);
+    Route::get('stockpdf/{stock}', [StockController::class, 'pdf']);
+
+    // Stock Level Routes
+    Route::get('stocklevel', [StockBalanceController::class, 'index']);
+    Route::get('stocklevelxlsx', [StockBalanceController::class, 'xlsx']);
+    Route::get('stocklevelcsv', [StockBalanceController::class, 'csv']);
+
+    //Sales
+    Route::get('saleslist', [SalesController::class, 'index']);
+    Route::get('saleshow/{id}', [SalesController::class, 'show']);
+    Route::get('getproductsinstock', [SalesController::class, 'getProductsInstock']);
+    Route::get('getbrandsbyproductinstock/{productId}', [SalesController::class, 'getBrandsByProductInstock']);
+    Route::get('getmeasurementsbybrandinstock/{brandId}', [SalesController::class, 'getMeasurementsByBrandInstock']);
+    Route::get('getsalepriceinstock', [SalesController::class, 'getSalePriceInstock']);
+    Route::post('salesstore', [SalesController::class, 'store']);
+
+    //Address Book
+    Route::get('addressbook/{phone_number}', [AddressBookController::class, 'show']);
+
+    // General Settings Routes
+    Route::get('generalsettingslist', [GeneralSettingsController::class, 'index']);
+    Route::post('generalsettingsstore', [GeneralSettingsController::class, 'store']);
+
+    // Email Settings Routes
+    Route::get('emailsettingslist', [EmailSettingsController::class, 'index']);
+    Route::post('emailsettingsstore', [EmailSettingsController::class, 'store']);
+
+    // Security Settings Routes
+    Route::get('securitysettingslist', [SecuritySettingsController::class, 'index']);
+    Route::post('securitysettingsstore', [SecuritySettingsController::class, 'store']);
+
+    // Trash Routes
+    Route::get('trashlist', [TrashController::class, 'index']);
+    Route::put('trashrestore/{model}/{id}', [TrashController::class, 'restore']);
+    Route::delete('trashdelete/{model}/{id}', [TrashController::class, 'destroy']);
+
+    // System Log Routes
+    Route::get('applicationloglist', [ApplicationLogController::class, 'index']);
+    Route::get('applicationlogcolumns', [ApplicationLogController::class, 'applicationLogColumns']);
+    Route::get('applicationlog/{applicationlog}', [ApplicationLogController::class, 'show']);
+    Route::get('applicationlogxlsx/{applicationlog}', [ApplicationLogController::class, 'xlsx']);
+    Route::get('applicationlogcsv/{applicationlog}', [ApplicationLogController::class, 'csv']);
+});
