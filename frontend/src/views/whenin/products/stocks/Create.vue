@@ -22,6 +22,7 @@ const min_stock_level = ref("");
 const supplier_id = ref("");
 const stock_date = ref("");
 const environment = ref(""); // Environment selection (e.g., Development, Production)
+const shouldRedirect = ref(true); // New reactive variable for redirection control
 
 // Reactive object to manage alerts
 const alerts = reactive({
@@ -45,6 +46,19 @@ const isLoading = ref(false);
 // Vue Router instance for navigation
 const router = useRouter();
 const store = useStore(); // Use Vuex store
+
+// Save the selected option to localStorage
+const saveRedirectPreference = (value) => {
+	localStorage.setItem("shouldRedirect", value);
+};
+
+// Load the saved option from localStorage
+const loadRedirectPreference = () => {
+	const savedPreference = localStorage.getItem("shouldRedirect");
+	if (savedPreference !== null) {
+		shouldRedirect.value = savedPreference === "true";
+	}
+};
 
 // Helper function to retrieve token
 const getToken = () => {
@@ -189,7 +203,7 @@ const handleSubmit = async () => {
                 unit_price: unit_price.value.replace(/,/g, ""), // Remove commas
                 total_cost: total_cost.value, // Assuming no commas need to be removed
                 sale_price: sale_price.value.replace(/,/g, ""), // Remove commas
-                min_stock_level: min_stock_level.value, // Assuming it's an integer
+                min_stock_level: min_stock_level.value.replace(/,/g, ""), // Remove commas
                 supplier_id: supplier_id.value,
                 stock_date: stock_date.value, // Assuming it's already in correct format
                 environment: environment.value,
@@ -203,7 +217,9 @@ const handleSubmit = async () => {
 
         if (response.data.success) {
             alerts.success = "Stock created successfully.";
-            setTimeout(() => router.push("/stocklist"), 1000); // Redirect after 1 second
+            if (shouldRedirect.value) {
+                setTimeout(() => router.push("/stocklist"), 1000); // Redirect after 1 second
+            }
             //console.log(response.data.data)
         } else {
             alerts.error = response.data.message || "An error occurred during submission.";
@@ -350,12 +366,23 @@ const initializeSelect2 = () => {
         .on("select2:unselecting", function (e) {
             //console.log("Clearing select field:", $(this).attr("id"));
             // Optionally prevent the clearing action (e.preventDefault())
-        });
+        })
+        // Autofocus on the search field when dropdown opens
+		.on("select2:open", function () {
+			setTimeout(() => {
+				let searchField = document.querySelector(".select2-container--open .select2-search__field");
+				if (searchField) {
+					searchField.focus();
+				}
+			}, 50); // Slight delay to ensure input is available
+		});
     });
 };
 
 // Initial data fetch
+// Initial data fetch
 onMounted(() => {
+	loadRedirectPreference(); // Load the saved redirect preference
     getProducts(); // Fetch products
     getMeasurements(); // Fetch measurements
     getSuppliers(); // Fetch suppliers
@@ -698,7 +725,7 @@ watch(brands, (newBrands) => {
                                     </div>
                                 </div>
 								<!-- Environment Field -->
-                                <div class="col-12">
+								<div class="col-lg-6 col-sm-4 col-12">
 									<div class="mb-3">
 										<label class="form-label">Environment</label>
 										<div>
@@ -754,6 +781,45 @@ watch(brands, (newBrands) => {
 											class="text-danger mt-2"
 										>
 											{{ alerts.environment }}
+										</div>
+									</div>
+								</div>
+								<!-- Save Button and Redirect Options -->
+								<div class="col-lg-6 col-sm-4 col-12">
+									<div class="mb-3">
+										<!-- Generalized Label -->
+										<label class="form-label">After Save Action</label>
+										<div>
+											<div class="form-check form-check-inline">
+												<input
+													v-model="shouldRedirect"
+													class="form-check-input"
+													type="radio"
+													name="redirectOption"
+													:value="true"
+													id="inlineRedirect"
+													@change="saveRedirectPreference(true)"
+												/>
+												<label
+													class="form-check-label"
+													for="inlineRedirect"
+												>Save and go to list</label>
+											</div>
+											<div class="form-check form-check-inline">
+												<input
+													v-model="shouldRedirect"
+													class="form-check-input"
+													type="radio"
+													name="redirectOption"
+													:value="false"
+													id="inlineNoRedirect"
+													@change="saveRedirectPreference(false)"
+												/>
+												<label
+													class="form-check-label"
+													for="inlineNoRedirect"
+												>Save and stay</label>
+											</div>
 										</div>
 									</div>
 								</div>

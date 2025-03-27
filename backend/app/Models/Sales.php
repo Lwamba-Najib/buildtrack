@@ -12,10 +12,13 @@ class Sales extends Model
     protected $fillable = [
         'customer_name',
         'customer_phone',
+        'customer_email',
+        'customer_address',
         'batch_number',
         'total_amount',
         'discount',
         'payment_method',
+        'notice',
         'created_by',
         'updated_by',
     ];

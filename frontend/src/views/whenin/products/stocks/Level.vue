@@ -129,7 +129,7 @@ const exportCsv = () => exportFile("csv");
 // Initial data fetch
 onMounted(() => {
 	new Podtable("#table", {
-		keepCell: [4],
+		keepCell: [6],
 	});
 	fetchStockLevels();
 });
@@ -343,7 +343,9 @@ const getStockStatus = (quantity, minStockLevel) => {
 											<th scope="col">PRODUCT</th>
 											<th scope="col">BRAND</th>
 											<th scope="col">UNIT OF MEASUREMENT</th>
-											<th scope="col">QUANTITY</th>
+											<th scope="col">QTY IN SOCK</th>
+											<th scope="col">QTY IN SOLD</th>
+											<th scope="col">STATUS</th>
 											<th scope="col" class="control-column"></th>
 										</tr>
 									</thead>
@@ -355,11 +357,13 @@ const getStockStatus = (quantity, minStockLevel) => {
 											<td>{{ log.product.name || "N/A" }}</td>
 											<td>{{ log.brand.name || "N/A" }}</td>
 											<td>{{ log.measurement.name || "N/A" }}</td>
-											<td>{{ log.quantity || 0 }}</td>
+											<td>{{ Number(log.quantity).toLocaleString() || 0 }}</td>
+											<td>{{ Number(0).toLocaleString() || 0 }}</td>
+											<td>{{ 'STATUS' }}</td>
 											<td class="control-column"></td>
 										</tr>
 										<tr v-if="stocks.length === 0">
-											<th colspan="5" class="text-center">
+											<th colspan="7" class="text-center">
 												No records found.
 											</th>
 										</tr>

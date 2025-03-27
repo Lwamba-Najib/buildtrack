@@ -497,7 +497,7 @@ const handleToggleFilterForms = () => {
 											<td>{{ parseDate(log.created_at) || "N/A" }}</td>
 											<td>
 												<div class="d-flex">
-													<div class="dropdown">
+													<div class="dropdown" v-if="menuAccess.salesInvoice || menuAccess.salesReceipt">
 														<button
 															type="button"
 															class="btn btn-success btn-sm dropdown-toggle"
@@ -509,20 +509,41 @@ const handleToggleFilterForms = () => {
 															class="dropdown-menu dropdown-menu-end"
 															style="right: 0; left: auto"
 														>
-															<li>
+															<li
+																v-if="menuAccess.salesReceipt"
+															>
 																<RouterLink
 																	class="dropdown-item"
 																	:to="{
-																		name: 'SalesShow',
+																		name: 'SalesReceipt',
 																		params: {
 																			id: log.id,
 																		},
 																	}"
-																	>View
+																	>Receipt
+																</RouterLink>
+															</li>
+															<div
+																v-if="menuAccess.salesInvoice"
+																class="dropdown-divider"
+															></div>
+															<li
+																v-if="menuAccess.salesInvoice"
+															>
+																<RouterLink
+																	class="dropdown-item"
+																	:to="{
+																		name: 'SalesInvoice',
+																		params: {
+																			id: log.id,
+																		},
+																	}"
+																	>Invoice
 																</RouterLink>
 															</li>
 														</ul>
 													</div>
+													<button type="button" class="btn btn-secondary btn-sm" disabled="true" v-else>Disabled</button>
 												</div>
 											</td>
 											<td class="control-column"></td>

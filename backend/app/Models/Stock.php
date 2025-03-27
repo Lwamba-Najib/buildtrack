@@ -18,6 +18,7 @@ class Stock extends Model
         'product_id',
         'brand_id',
         'measurement_id',
+        'batch_number',
         'quantity',
         'unit_price',
         'total_cost',

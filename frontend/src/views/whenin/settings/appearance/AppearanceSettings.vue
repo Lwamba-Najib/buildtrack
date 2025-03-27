@@ -133,7 +133,7 @@ const handleSubmit = async () => {
 		formData.append("wallpaper", wallpaper.value);
 
 		// Send a POST request to the API with form data and headers
-		const response = await axios.post("/generalsettingsstore", formData, {
+		const response = await axios.post("/appearancesettingsstore", formData, {
 			headers: {
 				Authorization: `Bearer ${token}`, // Include token in the Authorization header
 				"Content-Type": "multipart/form-data", // Ensure content-type is set for file uploads
@@ -159,7 +159,7 @@ const fetchSettings = async () => {
 	isLoading.value = true; // Set loading state to true
 	try {
 		const token = getToken();
-		const response = await axios.get("/generalsettingslist", {
+		const response = await axios.get("/appearancesettingslist", {
 			headers: {
 				Authorization: `Bearer ${token}`,
 			},
@@ -222,7 +222,7 @@ onMounted(() => {
 					>
 				</li>
 				<li class="breadcrumb-item text-secondary" aria-current="page">
-					General Settings
+					Appearance Settings
 				</li>
 			</ol>
 			<!-- Breadcrumb end -->
@@ -236,7 +236,7 @@ onMounted(() => {
 				<div class="col-xxl-12">
 					<div class="card mb-3">
 						<div class="card-header">
-							<h5 class="card-title">Configure General Settings</h5>
+							<h5 class="card-title">Create Appearance Settings</h5>
 						</div>
 						<div class="card-body">
 							<!-- Loading Spinner with Text -->

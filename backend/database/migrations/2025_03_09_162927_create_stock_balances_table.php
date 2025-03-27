@@ -16,11 +16,12 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
             $table->foreignId('brand_id')->constrained('brands')->cascadeOnDelete();
             $table->foreignId('measurement_id')->constrained('measurements')->cascadeOnDelete();
+            $table->string('batch_number')->index();
             $table->integer('balance')->default(0); // Tracks the current stock balance
             $table->timestamps();
 
             // Ensure uniqueness for product_id and brand_id combination
-            $table->unique(['product_id', 'brand_id', 'measurement_id']);
+            $table->unique(['product_id', 'brand_id', 'measurement_id', 'batch_number'],'stock_balances_unique_idx');
         });
     }
 

@@ -92,17 +92,20 @@ export const accessKeys = [
     { key: "salesList", name: "List Sales", category: "Sales", visibility: "public", availability: "private" },
     { key: "salesFilter",name: "Filter Sales",category: "Sales",visibility: "public", availability: "private"},
     { key: "salesExport",name: "Export Sales",category: "Sales",visibility: "public", availability: "private"},
+    { key: "salesInvoice",name: "Invoice",category: "Sales",visibility: "public", availability: "private"},
+    { key: "salesReceipt",name: "Receipt",category: "Sales",visibility: "public", availability: "private"},
 
     /* Reports */
-    { key: "accountStatementList", name: "Account Statements", category: "Account Statement Reports", visibility: "private", availability: "private" },
-    { key: "accountStatementListExport", name: "Export Account Statement List", category: "Account Statement Reports", visibility: "private", availability: "private" },
-    { key: "accountStatementListMaskToggle", name: "Mask Toggle Account Statement List", category: "Account Statement Reports", visibility: "private", availability: "private" },
-    { key: "accountStatementShowExport", name: "Export Account Statement Details", category: "Account Statement Reports", visibility: "private", availability: "private" },
-    { key: "accountStatementShowMaskToggle", name: "Mask Toggle Account Statement Details", category: "Account Statement Reports", visibility: "private", availability: "private" },
+    { key: "accountStatementList", name: "Account Statements", category: "Account Statement Reports", visibility: "public", availability: "private" },
+    { key: "accountStatementListExport", name: "Export Account Statement List", category: "Account Statement Reports", visibility: "public", availability: "private" },
+    { key: "accountStatementListMaskToggle", name: "Mask Toggle Account Statement List", category: "Account Statement Reports", visibility: "public", availability: "private" },
+    { key: "accountStatementShowExport", name: "Export Account Statement Details", category: "Account Statement Reports", visibility: "public", availability: "private" },
+    { key: "accountStatementShowMaskToggle", name: "Mask Toggle Account Statement Details", category: "Account Statement Reports", visibility: "public", availability: "private" },
 
     // Manage Settings
     { key: "settings", name: "Settings", category: "Settings", visibility: "private", availability: "private" },
-    { key: "generalSettings",name: "General Settings",category: "Settings",visibility: "public", availability: "private" },
+    { key: "businessInfoSettings",name: "Business Info Settings",category: "Settings",visibility: "public", availability: "private" },
+    { key: "appearanceSettings",name: "Appearance Settings",category: "Settings",visibility: "public", availability: "private" },
     { key: "emailSettings",name: "Email Settings",category: "Settings",visibility: "public", availability: "private" },
     { key: "securitySettings",name: "Security Settings",category: "Settings",visibility: "public", availability: "private" },
 

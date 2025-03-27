@@ -78,6 +78,7 @@ class MeasurementController extends Controller
                     'required',
                     'min:3',
                     'max:255',
+                    'unique:measurements',
                 ],
                 'environment' => 'required|in:PRODUCTION,TEST,DEVELOPMENT',
                 'created_by' => 'nullable',
@@ -167,6 +168,7 @@ class MeasurementController extends Controller
                     'required',
                     'min:3',
                     'max:255',
+                    Rule::unique('measurements')->ignore($measurement->id), // Ignore current record
                 ],
                 'updated_by' => 'nullable',
             ]);

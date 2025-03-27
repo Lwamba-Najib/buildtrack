@@ -9,6 +9,7 @@ useCustomUtils();
 // Initialize reactive variables for user creation fields, alerts, and loading state
 const name = ref("");
 const environment = ref("");
+const shouldRedirect = ref(true); // New reactive variable for redirection control
 const alerts = reactive({
 	success: "",
 	error: "",
@@ -18,6 +19,19 @@ const alerts = reactive({
 const isLoading = ref(false);
 const router = useRouter();
 const store = useStore(); // Use Vuex store
+
+// Save the selected option to localStorage
+const saveRedirectPreference = (value) => {
+	localStorage.setItem("shouldRedirect", value);
+};
+
+// Load the saved option from localStorage
+const loadRedirectPreference = () => {
+	const savedPreference = localStorage.getItem("shouldRedirect");
+	if (savedPreference !== null) {
+		shouldRedirect.value = savedPreference === "true";
+	}
+};
 // Helper function to retrieve token
 const getToken = () => {
 	const token = localStorage.getItem("token");
@@ -86,7 +100,9 @@ const handleSubmit = async () => {
 		// Check if the measurement creation was successful
 		if (response.data.success) {
 			alerts.success = "Measurement created successfully!";
-			setTimeout(() => router.push("/measurementlist"), 1000); // Redirect after 1 second
+			if (shouldRedirect.value) {
+				setTimeout(() => router.push("/measurementlist"), 1000); // Redirect after 1 second
+			}
 		} else {
 			alerts.error = response.data.message || "Failed to create measurement. Please try again.";
 		}
@@ -96,6 +112,10 @@ const handleSubmit = async () => {
 		isLoading.value = false; // Set loading state to false after request completes
 	}
 };
+// Initial data fetch
+onMounted(() => {
+	loadRedirectPreference(); // Load the saved redirect preference
+});
 </script>
 
 <template>
@@ -188,7 +208,7 @@ const handleSubmit = async () => {
 								</div>
 
 								<!-- Environment Field -->
-								<div class="col-12">
+								<div class="col-lg-6 col-sm-4 col-12">
 									<div class="mb-3">
 										<label class="form-label">Environment</label>
 										<div>
@@ -244,6 +264,45 @@ const handleSubmit = async () => {
 											class="text-danger mt-2"
 										>
 											{{ alerts.environment }}
+										</div>
+									</div>
+								</div>
+								<!-- Save Button and Redirect Options -->
+								<div class="col-lg-6 col-sm-4 col-12">
+									<div class="mb-3">
+										<!-- Generalized Label -->
+										<label class="form-label">After Save Action</label>
+										<div>
+											<div class="form-check form-check-inline">
+												<input
+													v-model="shouldRedirect"
+													class="form-check-input"
+													type="radio"
+													name="redirectOption"
+													:value="true"
+													id="inlineRedirect"
+													@change="saveRedirectPreference(true)"
+												/>
+												<label
+													class="form-check-label"
+													for="inlineRedirect"
+												>Save and go to list</label>
+											</div>
+											<div class="form-check form-check-inline">
+												<input
+													v-model="shouldRedirect"
+													class="form-check-input"
+													type="radio"
+													name="redirectOption"
+													:value="false"
+													id="inlineNoRedirect"
+													@change="saveRedirectPreference(false)"
+												/>
+												<label
+													class="form-check-label"
+													for="inlineNoRedirect"
+												>Save and stay</label>
+											</div>
 										</div>
 									</div>
 								</div>

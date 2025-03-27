@@ -20,6 +20,12 @@ return new class extends Migration
             $table->unsignedBigInteger('updated_by')->nullable(); // Define column without constraint
             $table->timestamps();
             $table->softDeletes();
+            // Add a composite unique constraint
+            $table->unique(['name', 'product_id']);
+
+            // Add foreign key constraints for created_by and updated_by
+            $table->foreign('created_by')->references('id')->on('users')->onDelete('set null');
+            $table->foreign('updated_by')->references('id')->on('users')->onDelete('set null');
         });
     }
 

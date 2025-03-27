@@ -9,12 +9,12 @@ useCustomUtils();
 const brandId = ref(""); // product  ID for updates
 const products = ref([]);
 const name = ref("");
-const product__id = ref("");
+const product_id = ref("");
 const alerts = reactive({
 	success: "",
 	error: "",
 	name: "",
-	product__id: "",	
+	product_id: "",	
 });
 const isLoading = ref(false);
 const router = useRouter();
@@ -45,9 +45,9 @@ const validateForm = () => {
 		isValid = false;
 	}
 
-	// Validate product__id field
-	if (!product__id.value) {
-		alerts.product__id = "Product  is required.";
+	// Validate product_id field
+	if (!product_id.value) {
+		alerts.product_id = "Product  is required.";
 		isValid = false;
 	}
 
@@ -74,7 +74,7 @@ const handleSubmit = async () => {
 			`/brandupdate/${brandId.value}`,
 			{
 				name: name.value,
-				product__id: product__id.value,
+				product_id: product_id.value,
 			},
 			{
 				headers: {
@@ -112,7 +112,7 @@ const getBrandDetails = async () => {
 		if (response.status === 200) {
 			const brand = response.data.data; // Adjust if necessary based on the actual response structure
 			name.value = brand.name;
-			product__id.value = brand.product__id;
+			product_id.value = brand.product_id;
 		} else {
 			console.error("Error fetching brand details:", response.statusText);
 		}
@@ -156,7 +156,7 @@ const initializeSelect2 = () => {
 
 			switch (fieldName) {
 			case "product":
-				product__id.value = newValue || ""; // Use empty string if cleared
+				product_id.value = newValue || ""; // Use empty string if cleared
 				break;
 			default:
 				console.warn(`Unhandled field: ${fieldName}`);
@@ -170,6 +170,15 @@ const initializeSelect2 = () => {
 		.on("select2:unselecting", function (e) {
 			//console.log("Clearing select field:", $(this).attr("id"));
 			// Optionally prevent the clearing action (e.preventDefault())
+		})
+		// Autofocus on the search field when dropdown opens
+		.on("select2:open", function () {
+			setTimeout(() => {
+				let searchField = document.querySelector(".select2-container--open .select2-search__field");
+				if (searchField) {
+					searchField.focus();
+				}
+			}, 50); // Slight delay to ensure input is available
 		});
 	});
 };
@@ -181,7 +190,7 @@ onMounted(() => {
 	initializeSelect2(); // Initialize Select2 after the DOM is rendered
 });
 // Reinitialize Select2 and validate form on dependency changes
-watchEffect([product__id],() => {
+watchEffect([product_id],() => {
     validateForm();
 });
 </script>
@@ -279,7 +288,7 @@ watchEffect([product__id],() => {
 									<div class="mb-3">
 										<label class="form-label">Product </label>
 										<select
-											v-model="product__id"
+											v-model="product_id"
 											id="product"
 											class="form-select select"
 										>
@@ -294,10 +303,10 @@ watchEffect([product__id],() => {
 										</select>
 										<!-- Display validation message for product -->
 										<div
-											v-if="alerts.product__id"
+											v-if="alerts.product_id"
 											class="text-danger mt-2"
 										>
-											{{ alerts.product__id }}
+											{{ alerts.product_id }}
 										</div>
 									</div>
 								</div>							

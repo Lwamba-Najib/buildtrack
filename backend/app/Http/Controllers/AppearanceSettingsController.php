@@ -3,14 +3,14 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\GeneralSettings;
+use App\Models\AppearanceSettings;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
-class GeneralSettingsController extends Controller
+class AppearanceSettingsController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -18,10 +18,10 @@ class GeneralSettingsController extends Controller
     public function index(Request $request)
     {
         try {
-            // Fetch the general settings (assuming only one record exists)
-            $generalSettings = GeneralSettings::first();
+            // Fetch the appearance settings (assuming only one record exists)
+            $appearanceSettings = AppearanceSettings::first();
 
-            if (!$generalSettings) {
+            if (!$appearanceSettings) {
                 // Return a default structure with placeholders if no settings are found
                 return response()->json([
                     'success' => true,
@@ -31,19 +31,19 @@ class GeneralSettingsController extends Controller
                         'favicon' => null,
                         'wallpaper' => null,
                     ],
-                    'message' => 'No general settings found, returning default structure.'
+                    'message' => 'No appearance settings found, returning default structure.'
                 ], 200);
             }
 
-            // Return the existing general settings in JSON format
+            // Return the existing appearance settings in JSON format
             return response()->json([
                 'success' => true,
-                'data' => $generalSettings
+                'data' => $appearanceSettings
             ], 200);
 
         } catch (\Exception $e) {
             // Log and return error message on failure
-            Log::error('Error in GeneralSettingsController: ' . $e->getMessage());
+            Log::error('Error in AppearanceSettingsController: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Internal server error'
@@ -52,13 +52,13 @@ class GeneralSettingsController extends Controller
     }
 
     /**
-     * Store or update general settings in storage.
+     * Store or update appearance settings in storage.
      */
     public function store(Request $request)
     {
         try {
-            // Check if a general settings record already exists
-            $existingSettings = GeneralSettings::first();
+            // Check if appearance settings record already exists
+            $existingSettings = AppearanceSettings::first();
 
             // Define validation rules
             $validationRules = [
@@ -105,11 +105,11 @@ class GeneralSettingsController extends Controller
                 // Update existing settings
                 $existingSettings->update($validated);
                 $action = 'Update';
-                $generalSetting = $existingSettings;
+                $appearanceSetting = $existingSettings;
                 $message = 'Settings updated successfully!';
             } else {
-                // Create new general settings record
-                $generalSetting = GeneralSettings::create($validated);
+                // Create new appearance settings record
+                $appearanceSetting = AppearanceSettings::create($validated);
                 $action = 'Create';
                 $message = 'Settings created successfully!';
             }
@@ -117,9 +117,9 @@ class GeneralSettingsController extends Controller
             // Log action (creation or update)
             (new ApplicationLogController())->storeLog(
                 $request,
-                'GeneralSettings',
+                'AppearanceSettings',
                 $action,
-                "$action general settings with details: " . json_encode($validated) . '.',
+                "$action appearance settings with details: " . json_encode($validated) . '.',
                 auth()->user()->id
             );
 
@@ -128,7 +128,7 @@ class GeneralSettingsController extends Controller
                 'success' => true,
                 'message' => $message,
                 'data' => [
-                    'generalsetting' => $generalSetting,
+                    'appearancesetting' => $appearanceSetting,
                 ],
             ], 200);
 
@@ -144,15 +144,15 @@ class GeneralSettingsController extends Controller
             // Handle database query errors
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create or update general settings: ' . $exception->getMessage(),
+                'message' => 'Failed to create or update appearance settings: ' . $exception->getMessage(),
             ], 500);
 
         } catch (\Exception $e) {
             // Log and handle other exceptions
-            Log::error('General settings error: ' . $e->getMessage());
+            Log::error('Appearance settings error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred during general settings processing. Please try again.',
+                'message' => 'An error occurred during appearance settings processing. Please try again.',
             ], 500);
         }
     }

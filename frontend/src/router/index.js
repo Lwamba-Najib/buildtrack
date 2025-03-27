@@ -58,7 +58,8 @@ import StockLevel from "@/views/whenin/products/stocks/Level.vue";
 // Sales
 import SalesPOS from "@/views/whenin/sales/pos/POS.vue";
 import SalesList from "@/views/whenin/sales/sales/List.vue";
-import SalesShow from "@/views/whenin/sales/sales/Show.vue";
+import SalesReceipt from "@/views/whenin/sales/sales/Receipt.vue";
+import SalesInvoice from "@/views/whenin/sales/sales/Invoice.vue";
 
 // Account Statement
 import AccountStatementList from "@/views/whenin/reports/accountstatement/List.vue";
@@ -70,7 +71,8 @@ import Trash from "@/views/whenin/singles/Trash.vue";
 import ApplicationLogList from "@/views/whenin/auditlogs/applicationlogs/List.vue";
 import ApplicationLogShow from "@/views/whenin/auditlogs/applicationlogs/Show.vue";
 // System Settings
-import GeneralSettings from "@/views/whenin/settings/general/GeneralSettings.vue";
+import BusinessInfoSettings from "@/views/whenin/settings/businessinfo/BusinessInfoSettings.vue";
+import AppearanceSettings from "@/views/whenin/settings/appearance/AppearanceSettings.vue";
 import EmailSettings from "@/views/whenin/settings/email/EmailSettings.vue";
 import SecuritySettings from "@/views/whenin/settings/security/SecuritySettings.vue";
 
@@ -310,9 +312,15 @@ const router = createRouter({
                     meta: { public: false },
                 },
                 {
-                    path: "salesshow/:id",
-                    name: "SalesShow",
-                    component: SalesShow,
+                    path: "salesreceipt/:id",
+                    name: "SalesReceipt",
+                    component: SalesReceipt,
+                    meta: { public: false },
+                },
+                {
+                    path: "salesinvoice/:id",
+                    name: "SalesInvoice",
+                    component: SalesInvoice,
                     meta: { public: false },
                 },
                 {
@@ -328,9 +336,15 @@ const router = createRouter({
                     meta: { public: false },
                 },
                 {
-                    path: "generalsettings",
-                    name: "GeneralSettings",
-                    component: GeneralSettings,
+                    path: "businessInfosettings",
+                    name: "BusinessInfoSettings",
+                    component: BusinessInfoSettings,
+                    meta: { public: false },
+                },
+                {
+                    path: "appearancesettings",
+                    name: "AppearanceSettings",
+                    component: AppearanceSettings,
                     meta: { public: false },
                 },
                 {

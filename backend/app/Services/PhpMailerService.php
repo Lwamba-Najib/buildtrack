@@ -32,9 +32,10 @@ class PhpMailerService
         }
 
         // Server settings
+        // $mail->SMTPDebug = SMTP::DEBUG_SERVER; // Enable verbose debug output
         $this->mail->isSMTP(); // Send using SMTP
         $this->mail->Host = $this->emailSettings->smtp_host; // Set the SMTP server to send through
-        $this->mail->SMTPAuth = true; // Enable SMTP authentication
+        $this->mail->SMTPAuth = $this->emailSettings->smtp_auth; // Enable SMTP authentication
         $this->mail->Username = $this->emailSettings->smtp_username; // SMTP username
         $this->mail->Password = $this->emailSettings->smtp_password; // SMTP password
         $this->mail->SMTPSecure = $this->emailSettings->smtp_encryption; // Enable TLS encryption

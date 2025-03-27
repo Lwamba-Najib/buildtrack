@@ -1,14 +1,51 @@
 <script setup>
-import { ref, reactive, computed, onMounted } from "vue";
+import { ref, reactive, computed, onMounted, watch } from "vue";
 import axios from "@/axios";
 import { useRouter, RouterLink } from "vue-router";
 import { useCustomUtils } from "@/utils/customUtils";
 useCustomUtils();
 
+// Reactive variables
+const customerName = ref("Anonymous");
+const customerPhone = ref("0700000000");
+const customerEmail = ref("example@gmail.com");
+const customerAddress = ref("Unknown");
+const selectedProductId = ref("");
+const selectedBatchNumber = ref("");
+const selectedBrandId = ref("");
+const selectedMeasurementId = ref("");
+const salePrice = ref("");
+const quantity = ref(1);
+const discount = ref(0);
+const paymentMethod = ref("CASH");
+const notice = ref("");
+const cart = ref([]);
+const products = ref([]);
+const batchNumbers = ref([]);
+const brands = ref([]);
+const measurements = ref([]);
+const redirectOption = ref("stay"); // Default to "stay"
+
+const alerts = reactive({ 
+    success: "", 
+    error: "" 
+});
+
 const router = useRouter();
 const isLoading = ref(false);
-const alerts = reactive({ success: "", error: "" });
 
+// Save the selected option to localStorage
+const saveRedirectPreference = (value) => {
+    localStorage.setItem("redirectOption", value);
+};
+
+// Load the saved option from localStorage
+const loadRedirectPreference = () => {
+    const savedPreference = localStorage.getItem("redirectOption");
+    if (savedPreference) {
+        redirectOption.value = savedPreference;
+    }
+};
 // Helper function to retrieve token
 const getToken = () => {
     const token = localStorage.getItem("token");
@@ -21,21 +58,6 @@ const handleError = (error, alertField = "error") => {
     alerts[alertField] = error.response?.data?.message || "An error occurred. Please try again later.";
     console.error("API Error:", error);
 };
-
-// Reactive variables
-const customerName = ref("");
-const customerPhone = ref("");
-const selectedProductId = ref("");
-const selectedBrandId = ref("");
-const selectedMeasurementId = ref("");
-const salePrice = ref("");
-const quantity = ref(1);
-const discount = ref(0);
-const paymentMethod = ref("CASH");
-const cart = ref([]);
-const products = ref([]);
-const brands = ref([]);
-const measurements = ref([]);
 
 // Fetch products from the backend
 const fetchProductsInStock = async () => {
@@ -51,12 +73,34 @@ const fetchProductsInStock = async () => {
         handleError(error); // Handle error
     }
 };
-
-// Fetch brands by product ID
-const fetchBrandsByProductId = async (productId) => {
+// Fetch products from the backend
+const fetchBatchNumbersByProductId = async (productId) => {
     try {
         const token = getToken(); // Retrieve the token
-        const response = await axios.get(`/getbrandsbyproductinstock/${productId}`, {
+        const response = await axios.get(`/getbatchnumbersbyproductinstock/${productId}`, {
+            headers: {
+                Authorization: `Bearer ${token}`, // Include the token in the request
+            },
+        });
+
+        batchNumbers.value = response.data;
+        selectedBatchNumber.value = "";
+        selectedBrandId.value = "";
+        selectedMeasurementId.value = ""; // Reset measurement field
+        salePrice.value = ""; // Reset sale price field
+        // Reset Select2 dropdowns
+        $("#brand").val("").trigger("change");
+        $("#measurement").val("").trigger("change");
+    } catch (error) {
+        handleError(error); // Handle error
+    }
+};
+
+// Fetch brands by batchNumber
+const fetchBrandsBybatchNumber = async (batchNumber) => {
+    try {
+        const token = getToken(); // Retrieve the token
+        const response = await axios.get(`/getbrandsbybatchnumberinstock/${batchNumber}`, {
             headers: {
                 Authorization: `Bearer ${token}`, // Include the token in the request
             },
@@ -95,7 +139,7 @@ const fetchMeasurementsByBrandId = async (brandId) => {
 // Fetch sale price for selected product and brand
 const fetchSalePrice = async () => {
     // Return early if any required field is empty
-    if (!selectedProductId.value || !selectedBrandId.value || !selectedMeasurementId.value) {
+    if (!selectedProductId.value || !selectedBatchNumber.value || !selectedBrandId.value || !selectedMeasurementId.value) {
         salePrice.value = ""; // Reset sale price
         return;
     }
@@ -105,6 +149,7 @@ const fetchSalePrice = async () => {
         const response = await axios.get(`/getsalepriceinstock`, {
             params: {
                 productId: selectedProductId.value,
+                batchNumber: selectedBatchNumber.value,
                 brandId: selectedBrandId.value,
                 measurementId: selectedMeasurementId.value,
             },
@@ -125,6 +170,7 @@ const fetchSalePrice = async () => {
 // Add product to cart
 const addToCart = () => {
     const product = products.value.find((p) => p.id == selectedProductId.value); // Use == for loose comparison
+    const batchNumber = batchNumbers.value.find((bn) => bn.batch_number == selectedBatchNumber.value); // Use == for loose comparison
     const brand = brands.value.find((b) => b.id == selectedBrandId.value); // Use == for loose comparison
     const measurement = measurements.value.find((m) => m.id == selectedMeasurementId.value); // Use == for loose comparison
 
@@ -142,6 +188,7 @@ const addToCart = () => {
             // Add new item to the cart
             cart.value.push({
                 product,
+                batchNumber,
                 brand,
                 measurement,
                 quantity: quantity.value,
@@ -151,6 +198,7 @@ const addToCart = () => {
 
         // Reset form fields
         selectedProductId.value = "";
+        selectedBatchNumber.value = "";
         selectedBrandId.value = "";
         selectedMeasurementId.value = "";
         salePrice.value = "";
@@ -194,12 +242,15 @@ const validateForm = () => {
     let isValid = true;
 
     // Reset previous validation alerts
-    alerts.customerPhone = "";
     alerts.customerName = "";
+    alerts.customerPhone = "";
+    alerts.customerEmail = "";
+    alerts.customerAddress = "";
+    alerts.paymentMethod ="";
 
     // Validate phone number field
 	if (!customerPhone.value) {
-		alerts.customerPhone = "Customer Phone is required.";
+		alerts.customerPhone = "Customer phone is required.";
 		isValid = false;
 	} else if (!validatePhoneNumber(customerPhone.value)) {
 		alerts.customerPhone = "Invalid customer phoner format. Please enter only digits.";
@@ -207,7 +258,25 @@ const validateForm = () => {
 	}
     // Validate text field
     if (!customerName.value) {
-        alerts.customerName = "Customer is required.";
+        alerts.customerName = "Customer name is required.";
+        isValid = false;
+    }
+    // Validate email field
+	if (!customerEmail.value) {
+		alerts.customerEmail = "Customer email is required.";
+		isValid = false;
+	} else if (!validateEmail(customerEmail.value)) {
+		alerts.customerEmail = "Invalid email format.";
+		isValid = false;
+	}
+    // Validate text field
+    if (!customerAddress.value) {
+        alerts.customerAddress = "Customer address is required.";
+        isValid = false;
+    }
+    // Validate text field
+    if (!paymentMethod.value) {
+        alerts.paymentMethod = "Payment method is required.";
         isValid = false;
     }
 
@@ -229,9 +298,12 @@ const processSale = async () => {
             {
                 customerName: customerName.value,
                 customerPhone: customerPhone.value,
+                customerEmail: customerEmail.value,
+                customerAddress: customerAddress.value,
                 items: cart.value,
                 discount: discount.value,
                 paymentMethod: paymentMethod.value,
+                notice: notice.value,
             },
             {
                 headers: {
@@ -242,8 +314,18 @@ const processSale = async () => {
         if (response.data.success) {
             alerts.success = "Sale processed successfully!";
             clearCart();
-            setTimeout(() => router.push("/salespos"), 2000);
-            //console.log(response.data.data)
+            // Redirect after 2 seconds
+            setTimeout(() => {
+                let route;
+                if (redirectOption.value === "receipt") {
+                    route = `/salesreceipt/${response.data.data.id}`;
+                } else if (redirectOption.value === "invoice") {
+                    route = `/salesinvoice/${response.data.data.id}`;
+                } else {
+                    route = "/salespos";
+                }
+                router.push(route);
+            }, 2000);
         } else {
             alerts.error = response.data.message || "An error occurred during submission.";
         }        
@@ -275,7 +357,11 @@ const initializeSelect2 = () => {
                 switch (fieldName) {
                     case "product":
                         selectedProductId.value = newValue || ""; // Use empty string if cleared
-                        fetchBrandsByProductId(newValue); // Fetch brands when product changes
+                        fetchBatchNumbersByProductId(newValue); // Fetch batches when product changes
+                        break;
+                    case "batchNumber":
+                        selectedBatchNumber.value = newValue || ""; // Use empty string if cleared
+                        fetchBrandsBybatchNumber(newValue); // Fetch batch numbers when batchNumber changes
                         break;
                     case "brand":
                         selectedBrandId.value = newValue || ""; // Use empty string if cleared
@@ -285,15 +371,22 @@ const initializeSelect2 = () => {
                         selectedMeasurementId.value = newValue || ""; // Use empty string if cleared
                         fetchSalePrice(); // Fetch sale price when measurement changes
                         break;
+                    case "payment_method":
+                        paymentMethod.value = newValue || ""; // Use empty string if cleared
+                        break;
                     default:
                         console.warn(`Unhandled field: ${fieldName}`);
                 }
+            })
+            // Autofocus on the search field when dropdown opens
+            .on("select2:open", function () {
+                setTimeout(() => {
+                    let searchField = document.querySelector(".select2-container--open .select2-search__field");
+                    if (searchField) {
+                        searchField.focus();
+                    }
+                }, 50); // Slight delay to ensure input is available
             });
-
-        // Initialize Select2 dropdowns with empty values
-        $("#product").val("").trigger("change");
-        $("#brand").val("").trigger("change");
-        $("#measurement").val("").trigger("change");
     });
 };
 
@@ -302,17 +395,29 @@ onMounted(() => {
     new Podtable("#table", {
 		keepCell: [7],
 	});
+    loadRedirectPreference(); // Load the saved redirect preference
     // Reset reactive variables
     selectedProductId.value = "";
+    selectedBatchNumber.value = "";
     selectedBrandId.value = "";
     selectedMeasurementId.value = "";
     salePrice.value = "";
 
     // Initialize Select2
     initializeSelect2();
-
     // Fetch products
     fetchProductsInStock();
+});
+const pluralizeMeasurement = (measurement, quantity) => {
+    return quantity > 1 ? `${measurement}(s)` : measurement;
+};
+// Watch for changes in `customerPhone`
+watch(customerPhone, (newVal, oldVal) => {
+	if (!newVal) {
+		customerPhone.value = "0"; // Default to '0' if empty
+	} else if (!newVal.startsWith("0")) {
+		customerPhone.value = "0" + newVal; // Prepend '0' if not present
+	}
 });
 </script>
 
@@ -365,7 +470,8 @@ onMounted(() => {
 
                             <!-- Customer Details -->
                             <div class="row gx-3">
-                                <div class="col-lg-6 col-sm-4 col-12">
+                                <div :class="{'col-lg-6': redirectOption !== 'invoice', 'col-lg-3': redirectOption === 'invoice'}"
+                                class="col-sm-4 col-12">
                                     <div class="mb-3">
                                         <label class="form-label">Customer Name</label>
                                         <input
@@ -382,7 +488,8 @@ onMounted(() => {
 										</div>
                                     </div>
                                 </div>
-                                <div class="col-lg-6 col-sm-4 col-12">
+                                <div :class="{'col-lg-6': redirectOption !== 'invoice', 'col-lg-3': redirectOption === 'invoice'}"
+                                class="col-sm-4 col-12">
                                     <div class="mb-3">
                                         <label class="form-label">Customer Phone</label>
                                         <input
@@ -396,6 +503,40 @@ onMounted(() => {
                                         <!-- Display validation message -->
 										<div v-if="alerts.customerPhone" class="text-danger mt-2">
 											{{ alerts.customerPhone }}
+										</div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3 col-sm-4 col-12" v-if="redirectOption === 'invoice'">
+                                    <div class="mb-3">
+                                        <label class="form-label">Customer Email</label>
+                                        <input
+                                            v-model="customerEmail"
+                                            @input="validateForm"
+          									@blur="validateForm"
+                                            type="email"
+                                            class="form-control"
+                                            placeholder="Customer Email"
+                                        />
+                                        <!-- Display validation message -->
+										<div v-if="alerts.customerEmail" class="text-danger mt-2">
+											{{ alerts.customerEmail }}
+										</div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3 col-sm-4 col-12" v-if="redirectOption === 'invoice'">
+                                    <div class="mb-3">
+                                        <label class="form-label">Customer Address</label>
+                                        <input
+                                            v-model="customerAddress"
+                                            @input="validateForm"
+          									@blur="validateForm"
+                                            type="text"
+                                            class="form-control"
+                                            placeholder="Customer Address"
+                                        />
+                                        <!-- Display validation message -->
+										<div v-if="alerts.customerAddress" class="text-danger mt-2">
+											{{ alerts.customerAddress }}
 										</div>
                                     </div>
                                 </div>
@@ -419,6 +560,28 @@ onMounted(() => {
                                                 :value="product.id"
                                             >
                                                 {{ product.name }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Batch Number Dropdown based on the selected product -->
+                                <div class="col-lg-2 col-sm-4 col-12">
+                                    <div>
+                                        <label class="form-label">Batch Number</label>
+                                        <select
+                                            v-model="selectedBatchNumber"
+                                            id="batchNumber"
+                                            class="form-select select"
+                                            :disabled="!selectedProductId"
+                                        >
+                                            <option value="" disabled>Select batch</option>
+                                            <option
+                                                v-for="batch in batchNumbers"
+                                                :key="batch.batch_number"
+                                                :value="batch.batch_number"
+                                            >
+                                                {{ batch.batch_number }} (Balance: {{ batch.balance }})
                                             </option>
                                         </select>
                                     </div>
@@ -466,7 +629,7 @@ onMounted(() => {
                                 </div>
 
                                 <!-- Sale Price Display -->
-                                <div class="col-lg-2 col-sm-4 col-12">
+                                <div class="col-lg-1 col-sm-4 col-12">
                                     <div>
                                         <label class="form-label">Sale Price</label>
                                         <input
@@ -480,7 +643,7 @@ onMounted(() => {
                                 </div>
 
                                 <!-- Quantity Input -->
-                                <div class="col-lg-2 col-sm-4 col-12">
+                                <div class="col-lg-1 col-sm-4 col-12">
                                     <div>
                                         <label class="form-label">Quantity</label>
                                         <input
@@ -529,7 +692,7 @@ onMounted(() => {
                                                 <th scope="row">{{ index + 1 }}</th>
                                                 <td>{{ item.product.name }}</td>
                                                 <td>{{ item.brand.name }}</td>
-                                                <td>{{ item.measurement.name }}</td>
+                                                <td>{{ pluralizeMeasurement(item.measurement.name, item.quantity) }}</td>
                                                 <td>{{ item.quantity }}</td>
                                                 <td>{{ formatCurrency(item.salePrice) }}</td>
                                                 <td>{{ formatCurrency(item.quantity * item.salePrice) }}</td>
@@ -572,16 +735,42 @@ onMounted(() => {
                                 <div class="col-lg-6 col-sm-12">
                                     <div class="mb-3">
                                         <label class="form-label">Payment Method</label>
-                                        <select v-model="paymentMethod" class="form-select">
+                                        <select v-model="paymentMethod" id="payment_method" class="form-select select">
                                             <option value="CASH">Cash</option>
                                             <option value="MOBILE MONEY">Mobile Money</option>
                                             <option value="BANK">Bank</option>
                                             <option value="CARD">Card</option>
                                         </select>
+                                        <!-- Display validation message -->
+                                        <div
+                                            v-if="alerts.paymentMethod"
+                                            class="text-danger mt-2"
+                                        >
+                                            {{ alerts.paymentMethod }}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-
+                            </div>     
+                            <div class="row" v-if="redirectOption === 'invoice'">
+                                <div class="col-lg-12 col-sm-4 col-12">
+                                    <div class="mb-3">
+                                        <label class="form-label">Notice</label>
+                                        <textarea
+                                            v-model="notice"
+                                            type="text"
+                                            class="form-control"
+                                            placeholder="Enter Notice"
+                                        ></textarea>
+                                        <!-- Display validation message -->
+                                        <div
+                                            v-if="alerts.notice"
+                                            class="text-danger mt-2"
+                                        >
+                                            {{ alerts.notice }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>                       
                             <!-- Totals Display -->
                             <div class="row mt-4">
                                 <div class="col-12 text-end">
@@ -590,7 +779,57 @@ onMounted(() => {
                                     <h4>Total: {{ formatCurrency(subtotal - (subtotal * (discount / 100))) }}</h4>
                                 </div>
                             </div>
-                        </div>
+                            <hr>
+                            <div class="row mt-4">
+                                <!-- Save Button and Redirect Options -->
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-end align-items-center my-2 my-lg-0">
+                                        <div class="mb-3">
+                                            <!-- Generalized Label -->
+                                            <label class="form-label">After Save Action</label>
+                                            <div>
+                                                <div class="form-check form-check-inline">
+                                                    <input
+                                                        v-model="redirectOption"
+                                                        class="form-check-input"
+                                                        type="radio"
+                                                        name="redirectOption"
+                                                        value="receipt"
+                                                        id="redirectReceipt"
+                                                        @change="saveRedirectPreference('receipt')"
+                                                    />
+                                                    <label class="form-check-label" for="redirectReceipt">Save and go to Receipt</label>
+                                                </div>
+                                                <div class="form-check form-check-inline">
+                                                    <input
+                                                        v-model="redirectOption"
+                                                        class="form-check-input"
+                                                        type="radio"
+                                                        name="redirectOption"
+                                                        value="invoice"
+                                                        id="redirectInvoice"
+                                                        @change="saveRedirectPreference('invoice')"
+                                                    />
+                                                    <label class="form-check-label" for="redirectInvoice">Save and go to Invoice</label>
+                                                </div>
+                                                <div class="form-check form-check-inline">
+                                                    <input
+                                                        v-model="redirectOption"
+                                                        class="form-check-input"
+                                                        type="radio"
+                                                        name="redirectOption"
+                                                        value="stay"
+                                                        id="redirectStay"
+                                                        @change="saveRedirectPreference('stay')"
+                                                    />
+                                                    <label class="form-check-label" for="redirectStay">Save and stay</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>                        
 
                         <!-- Footer with Action Buttons -->
                         <div class="card-footer">

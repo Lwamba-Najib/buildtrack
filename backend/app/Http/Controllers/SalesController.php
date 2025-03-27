@@ -35,7 +35,8 @@ class SalesController extends Controller
                 $query->where(function ($query) use ($searchTerm) {
                     $query->where('batch_number', 'LIKE', '%' . $searchTerm . '%')
                         ->orWhere('customer_name', 'LIKE', '%' . $searchTerm . '%')
-                        ->orWhere('customer_phone', 'LIKE', '%' . $searchTerm . '%');
+                        ->orWhere('customer_name', 'LIKE', '%' . $searchTerm . '%')
+                        ->orWhere('customer_email', 'LIKE', '%' . $searchTerm . '%');
                 });
             }
 
@@ -112,12 +113,31 @@ class SalesController extends Controller
     }
 
     /**
-     * Fetch brands by product ID.
+     * Fetch batches by product ID.
      */
-    public function getBrandsByProductInStock($productId)
+    public function getBatchNumbersByProductInStock($productId)
     {
         try {
-            $brands = StockBalance::where('product_id', $productId) // Use StockBalance instead of Stock
+            $batchNumbers = StockBalance::where('product_id', $productId)
+                ->where('balance', '>', 0)
+                ->get(['batch_number', 'balance']) // Fetch only needed fields
+                ->toArray(); // Convert to array for a cleaner response
+
+            return response()->json($batchNumbers);
+        } catch (\Exception $e) {
+            Log::error('Error fetching batch numbers', ['error' => $e]);
+
+            return response()->json(['error' => 'Failed to fetch batch numbers'], 500);
+        }
+    }
+
+    /**
+     * Fetch brands by batchNumber.
+     */
+    public function getBrandsByBatchNumberInStock($batchNumber)
+    {
+        try {
+            $brands = StockBalance::where('batch_number', $batchNumber) // Use StockBalance instead of Stock
                 ->where('balance', '>', 0) // Ensure the product is in stock
                 ->whereHas('brand') // Ensure there is an associated brand
                 ->with('brand:id,name') // Load only 'id' and 'name' fields from the brand
@@ -161,8 +181,10 @@ class SalesController extends Controller
             $productId = $request->query('productId');
             $brandId = $request->query('brandId');
             $measurementId = $request->query('measurementId');
+            $batchNumber = $request->query('batchNumber');
 
             $stock = Stock::where('product_id', $productId)
+                ->where('batch_number', $batchNumber)
                 ->where('brand_id', $brandId)
                 ->where('measurement_id', $measurementId)
                 ->first();
@@ -192,16 +214,20 @@ class SalesController extends Controller
             $batchNumber = 'SN' . $uuid;
             // Validate request data
             $validated = $request->validate([
-                'customerName' => 'required|string|max:255',
-                'customerPhone' => 'required|string|max:20',
+                'customerName' => 'nullable|string|max:255',
+                'customerPhone' => 'nullable|string|max:20',
+                'customerEmail' => 'nullable|string|max:255',
+                'customerAddress' => 'nullable|string|max:255',
                 'items' => 'required|array',
                 'items.*.product.id' => 'required|exists:products,id',
+                'items.*.batchNumber.batch_number' => 'required',
                 'items.*.brand.id' => 'required|exists:brands,id',
                 'items.*.measurement.id' => 'required|exists:measurements,id',
                 'items.*.quantity' => 'required|integer|min:1',
                 'items.*.salePrice' => 'required|numeric|min:0',
                 'discount' => 'required|numeric|min:0|max:100',
                 'paymentMethod' => 'required|in:CASH,CARD,ONLINE',
+                'notice' => 'nullable|string|max:255',
             ]);
 
             // Start a database transaction
@@ -219,10 +245,13 @@ class SalesController extends Controller
             $sale = Sales::create([
                 'customer_name' => ucwords($validated['customerName']),
                 'customer_phone' => $validated['customerPhone'],
+                'customer_email' => $validated['customerEmail'],
+                'customer_address' => $validated['customerAddress'],
                 'batch_number' => $batchNumber,
                 'total_amount' => $totalAmount,
                 'discount' => $validated['discount'],
                 'payment_method' => $validated['paymentMethod'],
+                'notice' => $validated['notice'],
                 'created_by' => $validated['created_by'] = auth()->user()->id,
             ]);
 
@@ -239,14 +268,15 @@ class SalesController extends Controller
                     'created_by' => $validated['created_by'] = auth()->user()->id,
                 ]);
 
-                // Update stock quantity
-                $stock = Stock::where('product_id', $item['product']['id'])
+                // Update stock balance
+                $stock = StockBalance::where('product_id', $item['product']['id'])
                     ->where('brand_id', $item['brand']['id'])
                     ->where('measurement_id', $item['measurement']['id'])
+                    ->where('batch_number', $item['batchNumber']['batch_number'])
                     ->first();
 
                 if ($stock) {
-                    $stock->decrement('quantity', $item['quantity']);
+                    $stock->decrement('balance', $item['quantity']);
                 }
             }
 

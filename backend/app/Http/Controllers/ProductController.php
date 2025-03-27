@@ -81,6 +81,16 @@ class ProductController extends Controller
                     'required',
                     'min:3',
                     'max:255',
+                    // Custom rule to check for duplicate product name and category ID
+                    function ($attribute, $value, $fail) use ($request) {
+                        $existingProduct = Product::where('name', $value)
+                            ->where('category_id', $request->category_id)
+                            ->first();
+
+                        if ($existingProduct) {
+                            $fail('The combination of product name and category ID already exists.');
+                        }
+                    },
                 ],
                 'category_id' => 'required',
                 'environment' => 'required|in:PRODUCTION,TEST,DEVELOPMENT',
@@ -175,6 +185,17 @@ class ProductController extends Controller
                     'required',
                     'min:3',
                     'max:255',
+                    // Custom rule to check for duplicate product name and category ID
+                    function ($attribute, $value, $fail) use ($request, $product) {
+                        $existingProduct = Product::where('name', $value)
+                            ->where('category_id', $request->category_id)
+                            ->where('id', '!=', $product->id) // Exclude the current product
+                            ->first();
+
+                        if ($existingProduct) {
+                            $fail('The combination of product name and category ID already exists.');
+                        }
+                    },
                 ],
                 'category_id' => 'required',
                 'updated_by' => 'nullable',

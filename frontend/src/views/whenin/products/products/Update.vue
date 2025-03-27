@@ -176,6 +176,15 @@ const initializeSelect2 = () => {
 		.on("select2:unselecting", function (e) {
 			//console.log("Clearing select field:", $(this).attr("id"));
 			// Optionally prevent the clearing action (e.preventDefault())
+		})
+		// Autofocus on the search field when dropdown opens
+		.on("select2:open", function () {
+			setTimeout(() => {
+				let searchField = document.querySelector(".select2-container--open .select2-search__field");
+				if (searchField) {
+					searchField.focus();
+				}
+			}, 50); // Slight delay to ensure input is available
 		});
 	});
 };

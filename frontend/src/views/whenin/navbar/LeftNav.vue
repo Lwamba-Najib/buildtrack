@@ -147,6 +147,28 @@ onMounted(() => {
 		document.removeEventListener("click", handleOutsideClick);
 	});
 });
+const lastPage = ref(""); // Track the last visited page
+
+// Watch route changes to track where the user came from
+watch(() => route.path, (newPath, oldPath) => {
+    if (oldPath === "/salespos") {
+        lastPage.value = "salespos";
+    } else if (oldPath === "/saleslist") {
+        lastPage.value = "saleslist";
+    }
+});
+
+const isPOSActive = computed(() => {
+    return route.path === "/salespos" || 
+           (route.path.startsWith("/salesreceipt") && lastPage.value === "salespos") ||
+           (route.path.startsWith("/salesinvoice") && lastPage.value === "salespos");
+});
+
+const isSalesListActive = computed(() => {
+    return route.path === "/saleslist" || 
+           (route.path.startsWith("/salesreceipt") && lastPage.value === "saleslist") ||
+           (route.path.startsWith("/salesinvoice") && lastPage.value === "saleslist");
+});
 </script>
 
 <template>
@@ -248,7 +270,7 @@ onMounted(() => {
 				>
 					<a href="#!">
 						<i class="fa fa-coins"></i>
-						<span class="menu-text">Manage Products</span>
+						<span class="menu-text">Manage Stock</span>
 					</a>
 					<ul class="treeview-menu">
 						<li v-if="menuAccess.categoryList">
@@ -366,9 +388,7 @@ onMounted(() => {
 						<li v-if="menuAccess.salesPOS">
 							<RouterLink
 								to="/salespos"
-								:class="{
-									'active-sub': isActive(['/salespos','/salesshow']),
-								}"
+								:class="{ 'active-sub': isPOSActive }"
 							>
 								POS
 							</RouterLink>
@@ -376,14 +396,13 @@ onMounted(() => {
 						<li v-if="menuAccess.salesList">
 							<RouterLink
 								to="/saleslist"
-								:class="{
-									'active-sub': isActive(['/saleslist','/salesshow']),
-								}"
+								:class="{ 'active-sub': isSalesListActive }"
 							>
 								Sales
 							</RouterLink>
 						</li>
 					</ul>
+
 				</li>
 				<li
 					v-if="
@@ -410,63 +429,73 @@ onMounted(() => {
 					<ul class="treeview-menu">
 						<li
 							v-if="
-								menuAccess.accountStatementMy || menuAccess.floatReportMy || menuAccess.transferReportMy || menuAccess.collectionReportMy
+								menuAccess.accountStatementList || menuAccess.floatReportList || menuAccess.transferReportList || menuAccess.collectionReportList
 							" 
-							:class="{'active': isActive(['/accountstatementmy', '/floatreportmy', '/transferreportmy', '/collectionreportmy'])}">
+						 	:class="{'active': isActive(['/accountstatement', '/floatreport', '/transferreport', '/collectionreport'])}">
 							<a href="#!">
-								Client
+								Sales Reports
 								<i class="bi bi-chevron-right"></i>
 							</a>
 							<ul class="treeview-menu">
-								<li v-if="menuAccess.accountStatementMy">
+								<li v-if="menuAccess.accountStatementList">
 									<RouterLink
-										to="/accountstatementmy"
+										to="/accountstatementlist"
 										:class="{
-											'active-sub': isActive(['/accountstatementmy']),
+											'active-sub': isActive(['/accountstatementlist','/collectionreportshow']),
 										}"
 									>
-										Account Statement
+										Daily Sales
 									</RouterLink>
 								</li>
-								<li v-if="menuAccess.floatReportMy">
+								<li v-if="menuAccess.accountStatementList">
 									<RouterLink
-										to="/floatreportmy"
+										to="/accountstatementlist"
 										:class="{
-											'active-sub': isActive(['/floatreportmy']),
+											'active-sub': isActive(['/accountstatementlist','/collectionreportshow']),
 										}"
 									>
-										Float Report
+										Weekly Sales
 									</RouterLink>
 								</li>
-								<li v-if="menuAccess.transferReportMy">
+								<li v-if="menuAccess.accountStatementList">
 									<RouterLink
-										to="/transferreportmy"
+										to="/accountstatementlist"
 										:class="{
-											'active-sub': isActive(['/transferreportmy']),
+											'active-sub': isActive(['/accountstatementlist','/collectionreportshow']),
 										}"
 									>
-										Transfer Report
+										Monthly Sales
 									</RouterLink>
 								</li>
-								<li v-if="menuAccess.collectionReportMy">
+								<li v-if="menuAccess.accountStatementList">
 									<RouterLink
-										to="/collectionreportmy"
+										to="/accountstatementlist"
 										:class="{
-											'active-sub': isActive(['/collectionreportmy']),
+											'active-sub': isActive(['/accountstatementlist','/collectionreportshow']),
 										}"
 									>
-										Collection Transfers
+										Interim Sales
 									</RouterLink>
 								</li>
+								<li v-if="menuAccess.accountStatementList">
+									<RouterLink
+										to="/accountstatementlist"
+										:class="{
+											'active-sub': isActive(['/accountstatementlist','/collectionreportshow']),
+										}"
+									>
+										Top-Selling Items
+									</RouterLink>
+								</li>								
 							</ul>
-						</li>
+						</li>						
 						<li
 							v-if="
 								menuAccess.accountStatementList || menuAccess.floatReportList || menuAccess.transferReportList || menuAccess.collectionReportList
 							" 
 						 	:class="{'active': isActive(['/accountstatement', '/floatreport', '/transferreport', '/collectionreport'])}">
 							<a href="#!">
-								Admin
+								Financial Reports
 								<i class="bi bi-chevron-right"></i>
 							</a>
 							<ul class="treeview-menu">
@@ -477,70 +506,113 @@ onMounted(() => {
 											'active-sub': isActive(['/accountstatementlist','/accountstatementshow']),
 										}"
 									>
-										Account Statements
+										Revenue
 									</RouterLink>
 								</li>
-								
-								<li v-if="menuAccess.floatReportList">
+								<li v-if="menuAccess.accountStatementList">
 									<RouterLink
-										to="/floatreportlist"
+										to="/accountstatementlist"
 										:class="{
-											'active-sub': isActive(['/floatreportlist','/floatreportshow']),
+											'active-sub': isActive(['/accountstatementlist','/accountstatementshow']),
 										}"
 									>
-										Float Reports
-									</RouterLink>
-								</li>					
-								<li v-if="menuAccess.transferReportList">
-									<RouterLink
-										to="/transferreportlist"
-										:class="{
-											'active-sub': isActive(['/transferreportlist','/transferreportshow']),
-										}"
-									>
-										Transfer Reports
+										Profit & Loss
 									</RouterLink>
 								</li>
-								<li v-if="menuAccess.collectionReportList">
+								<li v-if="menuAccess.accountStatementList">
 									<RouterLink
-										to="/collectionreportlist"
+										to="/accountstatementlist"
 										:class="{
-											'active-sub': isActive(['/collectionreportlist','/collectionreportshow']),
+											'active-sub': isActive(['/accountstatementlist','/floatreportshow']),
 										}"
 									>
-										Collection Transfers
+										Expense Report
+									</RouterLink>
+								</li>
+								<li v-if="menuAccess.accountStatementList">
+									<RouterLink
+										to="/accountstatementlist"
+										:class="{
+											'active-sub': isActive(['/accountstatementlist','/floatreportshow']),
+										}"
+									>
+										Supplier Report
+									</RouterLink>
+								</li>
+								<li v-if="menuAccess.accountStatementList">
+									<RouterLink
+										to="/accountstatementlist"
+										:class="{
+											'active-sub': isActive(['/accountstatementlist','/floatreportshow']),
+										}"
+									>
+										Tax Report
 									</RouterLink>
 								</li>
 							</ul>
-						</li>						
-						<li  
+						</li>
+						<li
 							v-if="
-								menuAccess.revenueByClientList || menuAccess.consolidatedRevenueList
+								menuAccess.accountStatementList || menuAccess.floatReportList || menuAccess.transferReportList || menuAccess.collectionReportList
 							" 
-							:class="{'active': isActive(['/revenuebyclient', '/consolidatedrevenue'])}">
+						 	:class="{'active': isActive(['/accountstatement', '/floatreport', '/transferreport', '/collectionreport'])}">
 							<a href="#!">
-								Revenue
+								Inventory Reports
 								<i class="bi bi-chevron-right"></i>
 							</a>
 							<ul class="treeview-menu">
-								<li v-if="menuAccess.revenueByClientList">
+								<li v-if="menuAccess.accountStatementList">
 									<RouterLink
-										to="/revenuebyclientlist"
+										to="/accountstatementlist"
 										:class="{
-											'active-sub': isActive(['/revenuebyclientlist']),
+											'active-sub': isActive(['/accountstatementlist','/accountstatementshow']),
 										}"
 									>
-										Revenue by Client
+										Stock
 									</RouterLink>
-								</li>								
-								<li v-if="menuAccess.consolidatedRevenueList">
+								</li>
+								
+								<li v-if="menuAccess.accountStatementList">
 									<RouterLink
-										to="/consolidatedrevenuelist"
+										to="/accountstatementlist"
 										:class="{
-											'active-sub': isActive(['/consolidatedrevenuelist']),
+											'active-sub': isActive(['/accountstatementlist','/floatreportshow']),
 										}"
 									>
-										Consolidated Revenue
+										Stock Balance
+									</RouterLink>
+								</li>
+								
+								<li v-if="menuAccess.accountStatementList">
+									<RouterLink
+										to="/accountstatementlist"
+										:class="{
+											'active-sub': isActive(['/accountstatementlist','/floatreportshow']),
+										}"
+									>
+										Low Stock Alerts
+									</RouterLink>
+								</li>
+								
+								<li v-if="menuAccess.accountStatementList">
+									<RouterLink
+										to="/accountstatementlist"
+										:class="{
+											'active-sub': isActive(['/accountstatementlist','/floatreportshow']),
+										}"
+									>
+										Inventory Valuation
+									</RouterLink>
+								</li>
+								
+								<li v-if="menuAccess.accountStatementList">
+									<RouterLink
+										to="/accountstatementlist"
+										:class="{
+											'active-sub': isActive(['/accountstatementlist','/floatreportshow']),
+										}"
+									>
+										Stock Aging
 									</RouterLink>
 								</li>
 							</ul>
@@ -549,24 +621,18 @@ onMounted(() => {
 				</li>
 				<li
 					v-if="
-						menuAccess.generalSettings ||
+						menuAccess.businessInfoSettings ||
+						menuAccess.appearanceSettings ||
 						menuAccess.emailSettings ||
-						menuAccess.securitySettings ||
-						menuAccess.workingHoursSettings ||
-						menuAccess.approvalLevelList ||
-						menuAccess.feeList ||
-						menuAccess.tariffList
+						menuAccess.securitySettings
 					"
 					class="treeview"
 					:class="{
 						'active current-page': isActive([
-							'/securitysettings',
-							'/workinghourssettings',
-							'/generalsettings',
+							'/businessinfosettings',
+							'/appearancesettings',
 							'/emailsettings',
-							'/approvallevel',
-							'/fee',
-							'/tariff',
+							'/securitysettings',
 						]),
 					}"
 				>
@@ -575,12 +641,20 @@ onMounted(() => {
 						<span class="menu-text">Manage Settings</span>
 					</a>
 					<ul class="treeview-menu">
-						<li v-if="menuAccess.generalSettings">
+						<li v-if="menuAccess.businessInfoSettings">
 							<RouterLink
-								to="/generalsettings"
-								:class="{ 'active-sub': isActive(['/generalsettings']) }"
+								to="/businessinfosettings"
+								:class="{ 'active-sub': isActive(['/businessinfosettings']) }"
 							>
-								General</RouterLink
+							Business Info</RouterLink
+							>
+						</li>
+						<li v-if="menuAccess.appearanceSettings">
+							<RouterLink
+								to="/appearancesettings"
+								:class="{ 'active-sub': isActive(['/appearancesettings']) }"
+							>
+							Appearance</RouterLink
 							>
 						</li>
 						<li v-if="menuAccess.emailSettings">
@@ -612,18 +686,12 @@ onMounted(() => {
 				</li>
 				<li
 					v-if="
-						menuAccess.applicationLogs || 
-						menuAccess.singleTransferLogs || 
-						menuAccess.bulkTransferLogs || 
-						menuAccess.collectionTransferLogs
+						menuAccess.applicationLogs
 					"
 					class="treeview"
 					:class="{
 						'active current-page': isActive([
-							'/applicationlog',
-							'singeletransferlog',
-							'bulktransferlog',
-							'collectiontransferlog'
+							'/applicationlog'
 						]),
 					}"
 				>

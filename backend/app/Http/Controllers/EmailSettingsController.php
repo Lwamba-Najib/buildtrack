@@ -27,7 +27,7 @@ class EmailSettingsController extends Controller
                     'data' => [
                         'sender_name' => '',
                         'sender_email' => '',
-                        'smtp_driver' => '',
+                        'smtp_auth' => '',
                         'smtp_host' => '',
                         'smtp_username' => '',
                         'smtp_password' => '',
@@ -68,7 +68,7 @@ class EmailSettingsController extends Controller
             $validationRules = [
                 'sender_name' => 'required|string|max:255',
                 'sender_email' => 'required|email|max:255',
-                'smtp_driver' => 'required|string|max:255',
+                'smtp_auth' => 'required|string|max:255',
                 'smtp_host' => 'required|string|max:255',
                 'smtp_username' => 'required|string|max:255',
                 'smtp_password' => 'required|string|max:255',

@@ -9,18 +9,32 @@ useCustomUtils();
 // Initialize reactive variables for user creation fields, alerts, and loading state
 const products = ref([]);
 const name = ref("");
-const product__id = ref("");
+const product_id = ref("");
 const environment = ref("");
+const shouldRedirect = ref(true); // New reactive variable for redirection control
 const alerts = reactive({
 	success: "",
 	error: "",
 	name: "",
-	product__id: "",
+	product_id: "",
 	environment: "",
 });
 const isLoading = ref(false);
 const router = useRouter();
 const store = useStore(); // Use Vuex store
+
+// Save the selected option to localStorage
+const saveRedirectPreference = (value) => {
+	localStorage.setItem("shouldRedirect", value);
+};
+
+// Load the saved option from localStorage
+const loadRedirectPreference = () => {
+	const savedPreference = localStorage.getItem("shouldRedirect");
+	if (savedPreference !== null) {
+		shouldRedirect.value = savedPreference === "true";
+	}
+};
 // Helper function to retrieve token
 const getToken = () => {
 	const token = localStorage.getItem("token");
@@ -38,7 +52,7 @@ const handleError = (error, alertField = "error") => {
 const validateForm = () => {
 	// Clear previous validation alerts
 	alerts.name = "";
-	alerts.product__id = "";
+	alerts.product_id = "";
 	alerts.environment = "";
 
 	let isValid = true;
@@ -49,9 +63,9 @@ const validateForm = () => {
 		isValid = false;
 	}
 
-	// Validate product__id field
-	if (!product__id.value) {
-		alerts.product__id = "Product  is required.";
+	// Validate product_id field
+	if (!product_id.value) {
+		alerts.product_id = "Product  is required.";
 		isValid = false;
 	}
 
@@ -84,7 +98,7 @@ const handleSubmit = async () => {
 			"/brandstore",
 			{
 				name: name.value,
-				product__id: product__id.value,
+				product_id: product_id.value,
 				environment: environment.value,
 			},
 			{
@@ -97,7 +111,9 @@ const handleSubmit = async () => {
 		// Check if the brand creation was successful
 		if (response.data.success) {
 			alerts.success = "Brand created successfully!";
-			setTimeout(() => router.push("/brandlist"), 1000); // Redirect after 1 second
+			if (shouldRedirect.value) {
+				setTimeout(() => router.push("/brandlist"), 1000); // Redirect after 1 second
+			}
 		} else {
 			alerts.error = response.data.message || "Failed to create brand. Please try again.";
 		}
@@ -143,25 +159,36 @@ const initializeSelect2 = () => {
 
 			switch (fieldName) {
 			case "product":
-				product__id.value = newValue || ""; // Use empty string if cleared
+				product_id.value = newValue || ""; // Use empty string if cleared
 				break;
 			default:
 				console.warn(`Unhandled field: ${fieldName}`);
 			}
 
 			if (!newValue) {
-			//console.log(`${fieldName} was cleared.`);
+				//console.log(`${fieldName} was cleared.`);
 			}
 		})
 		// Handle the unselecting event to prevent undefined access
 		.on("select2:unselecting", function (e) {
 			//console.log("Clearing select field:", $(this).attr("id"));
 			// Optionally prevent the clearing action (e.preventDefault())
+		})
+		// Autofocus on the search field when dropdown opens
+		.on("select2:open", function () {
+			setTimeout(() => {
+				let searchField = document.querySelector(".select2-container--open .select2-search__field");
+				if (searchField) {
+					searchField.focus();
+				}
+			}, 50); // Slight delay to ensure input is available
 		});
 	});
 };
+
 // Initial data fetch
 onMounted(() => {
+	loadRedirectPreference(); // Load the saved redirect preference
 	getProducts(); // Fetch categories when the component is mounted
 	initializeSelect2(); // Initialize Select2 after the DOM is rendered
 });
@@ -260,7 +287,7 @@ onMounted(() => {
 									<div class="mb-3">
 										<label class="form-label">Product</label>
 										<select
-											v-model="product__id"
+											v-model="product_id"
 											id="product"
 											class="form-select select"
 										>
@@ -275,15 +302,15 @@ onMounted(() => {
 										</select>
 										<!-- Display validation message for product -->
 										<div
-											v-if="alerts.product__id"
+											v-if="alerts.product_id"
 											class="text-danger mt-2"
 										>
-											{{ alerts.product__id }}
+											{{ alerts.product_id }}
 										</div>
 									</div>
 								</div>
 								<!-- Environment Field -->
-								<div class="col-12">
+								<div class="col-lg-6 col-sm-4 col-12">
 									<div class="mb-3">
 										<label class="form-label">Environment</label>
 										<div>
@@ -339,6 +366,45 @@ onMounted(() => {
 											class="text-danger mt-2"
 										>
 											{{ alerts.environment }}
+										</div>
+									</div>
+								</div>
+								<!-- Save Button and Redirect Options -->
+								<div class="col-lg-6 col-sm-4 col-12">
+									<div class="mb-3">
+										<!-- Generalized Label -->
+										<label class="form-label">After Save Action</label>
+										<div>
+											<div class="form-check form-check-inline">
+												<input
+													v-model="shouldRedirect"
+													class="form-check-input"
+													type="radio"
+													name="redirectOption"
+													:value="true"
+													id="inlineRedirect"
+													@change="saveRedirectPreference(true)"
+												/>
+												<label
+													class="form-check-label"
+													for="inlineRedirect"
+												>Save and go to list</label>
+											</div>
+											<div class="form-check form-check-inline">
+												<input
+													v-model="shouldRedirect"
+													class="form-check-input"
+													type="radio"
+													name="redirectOption"
+													:value="false"
+													id="inlineNoRedirect"
+													@change="saveRedirectPreference(false)"
+												/>
+												<label
+													class="form-check-label"
+													for="inlineNoRedirect"
+												>Save and stay</label>
+											</div>
 										</div>
 									</div>
 								</div>

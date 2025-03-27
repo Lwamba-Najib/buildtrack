@@ -22,27 +22,19 @@ const id = ref("");
 const name = ref("");
 const gender = ref("");
 const nin = ref("");
-const country = ref("");
-const code = ref("");
 const phone_number = ref("");
 const email = ref("");
 const role_id = ref("");
-const client_id = ref("");
-const user_type = ref("");
 const alerts = reactive({
     success: "",
 	error: "",
 	id: "",
     name: "",
 	email: "",
-	country: "",
-	code: "",
 	phone_number: "",
 	nin: "",
 	gender: "",
 	role_id: "",
-	client_id: "",
-	user_type: "",
 });
 const isLoading = ref(false);
 const router = useRouter();
@@ -71,14 +63,10 @@ const validateForm = () => {
     // Clear previous validation alerts
     alerts.name = "";
 	alerts.email = "";
-	alerts.country = "";
-	alerts.code = "";
 	alerts.phone_number = "";
 	alerts.nin = "";
 	alerts.gender = "";
 	alerts.role_id = "";
-	alerts.client_id = "";
-	alerts.user_type = "";
 
     let isValid = true;
 
@@ -94,12 +82,6 @@ const validateForm = () => {
 		isValid = false;
 	} else if (!validateEmail(email.value)) {
 		alerts.email = "Invalid email format.";
-		isValid = false;
-	}
-
-	// Validate country field
-	if (!country.value) {
-		alerts.country = "Country is required.";
 		isValid = false;
 	}
 
@@ -127,18 +109,6 @@ const validateForm = () => {
 		isValid = false;
 	}
 
-	// Validate client field
-	if (!client_id.value) {
-		alerts.client_id = "Client is required.";
-		isValid = false;
-	}
-
-	// Validate user type field
-	if (!user_type.value) {
-		alerts.user_type = "Account type is required.";
-		isValid = false;
-	}
-
 	return isValid;
 };
 
@@ -162,13 +132,9 @@ const handleSubmit = async () => {
             name: name.value,
             gender: gender.value,
             nin: nin.value,
-            country: country.value,
-            code: code.value,
             phone_number: phone_number.value,
             email: email.value,
             role_id: role_id.value,
-            client_id: client_id.value,
-            user_type: user_type.value,
         }, {
             headers: {
                 Authorization: `Bearer ${token}` // Include the token in the Authorization header
@@ -204,13 +170,9 @@ const getUserPersonalDetails = async () => {
             name.value = user.name;
             gender.value = user.gender;
             nin.value = user.nin;
-            country.value = user.country;
-            code.value = user.code;
             phone_number.value = user.phone_number;
             email.value = user.email;
             role_id.value = user.role_id;
-            client_id.value = user.client_id;
-            user_type.value = user.user_type;
         } else {
             console.error('Error fetching personal details:', response.statusText);
         }
@@ -240,37 +202,6 @@ const getRoles = async () => {
         handleError(error); // Handle error using centralized error handler
     }
 };
-// Function to fetch clients from the API
-const getClients = async () => {
-	try {
-		const token = getToken(); // Retrieve the token
-
-		// Fetch clients from the API
-		const response = await axios.get("/getclients", {
-			headers: {
-				Authorization: `Bearer ${token}`, // Include the token in the Authorization header
-			},
-		});
-
-		if (response.status === 200) {
-			clients.value = response.data; // Store the fetched clients
-		} else {
-			console.error("Error fetching clients:", response.statusText);
-		}
-	} catch (error) {
-		handleError(error); // Handle error using centralized error handler
-	}
-};
-// Computed property to filter account types based on the logged-in user type
-const filteredAccountTypes = computed(() => {
-	const userType = store.state.userType; // Assuming `userType` is stored in the Vuex state
-	const userIndex = accounts.findIndex(account => account.user_type === userType);
-
-	if (userIndex !== -1) {
-		return accounts.slice(userIndex).map(account => account.user_type);
-	}
-	return [];
-});
 // Initialize Select2 on all select fields
 const initializeSelect2 = () => {
   	$(function () {
@@ -291,15 +222,6 @@ const initializeSelect2 = () => {
 			case "gender":
 				gender.value = newValue || ""; // Handle gender field
 				break;
-			case "country":
-				country.value = newValue || ""; // Handle country field
-				break;
-			case "client":
-				client_id.value = newValue || ""; // Handle client_id field
-				break;
-			case "user_type":
-				user_type.value = newValue || ""; // Handle user_type field
-				break;
 			default:
 				console.warn(`Unhandled field: ${fieldName}`);
 			}
@@ -312,28 +234,26 @@ const initializeSelect2 = () => {
 		.on("select2:unselecting", function (e) {
 			//console.log("Clearing select field:", $(this).attr("id"));
 			// Optionally prevent the clearing action (e.preventDefault())
+		})
+		// Autofocus on the search field when dropdown opens
+		.on("select2:open", function () {
+			setTimeout(() => {
+				let searchField = document.querySelector(".select2-container--open .select2-search__field");
+				if (searchField) {
+					searchField.focus();
+				}
+			}, 50); // Slight delay to ensure input is available
 		});
 	});
 };
-
-// Watch the `country` field and auto-fill the code field
-watch(country, (newCountry) => {
-	const selectedCountry = publicCountries.value.find((c) => c.country === newCountry);
-	if (selectedCountry) {
-		code.value = selectedCountry.code; // Set code with country code
-	} else {
-		code.value = ""; // Clear code if no valid country is selected
-	}
-});
 // Initial data fetch (fetch roles and user details)
 onMounted(() => {
     getRoles(); // Fetch roles when the component is mounted
-	getClients(); // Fetch clients when the component is mounted
     getUserPersonalDetails();
     initializeSelect2();
 });
 // Reinitialize Select2 and validate form on dependency changes
-watch([country], () => {    
+watch([gender,role_id], () => {    
     initializeSelect2();
 }, { immediate: true }); // Ensure both actions run immediately when dependencies are populated
 </script>
@@ -423,78 +343,23 @@ watch([country], () => {
                                     </div>
                                 </div>
 
-                                <!-- Country Field -->
+                                <!-- Phone Number Field -->
 								<div class="col-lg-4 col-sm-4 col-12">
 									<div class="mb-3">
-										<label class="form-label">Country</label>
-										<select
-											v-model="country"
-                                            @change="validateForm"
-											id="country"
-											class="form-select select" disabled
-										>
-											<option value="" disabled>
-												Select country
-											</option>
-											<option
-												v-for="c in publicCountries"
-												:key="c.code"
-												:value="c.country"
-											>
-												{{ c.country }}
-											</option>
-										</select>
-										<!-- Display validation message for Country -->
+										<label class="form-label">Phone</label>
+										<input
+											v-model="phone_number" @input="validateForm" @blur="validateForm"
+											type="tel"
+											class="form-control"
+											placeholder="Enter phone number"
+											maxlength="18"
+										/>
+										<!-- Display validation message for phone number -->
 										<div
-											v-if="alerts.country"
+											v-if="alerts.phone_number"
 											class="text-danger mt-2"
 										>
-											{{ alerts.country }}
-										</div>
-									</div>
-								</div>
-								
-								<div class="col-lg-4 col-sm-4 col-12">
-									<div class="row">
-										<!-- Code Number Field -->
-										<div class="col-lg-3 col-sm-3 col-3">
-											<div class="mb-3">
-												<label class="form-label">Code</label>
-												<input
-													v-model="code"
-													type="tel"
-													class="form-control"
-													placeholder="Code"
-													disabled
-												/>
-												<!-- Display validation message for code -->
-												<div
-													v-if="alerts.code"
-													class="text-danger mt-2"
-												>
-													{{ alerts.code }}
-												</div>
-											</div>
-										</div>
-										<!-- Phone Number Field -->
-										<div class="col-lg-9 col-sm-9 col-9">
-											<div class="mb-3">
-												<label class="form-label">Phone</label>
-												<input
-													v-model="phone_number" @input="validateForm" @blur="validateForm"
-													type="tel"
-													class="form-control"
-													placeholder="Enter phone number"
-													maxlength="18"
-												/>
-												<!-- Display validation message for phone number -->
-												<div
-													v-if="alerts.phone_number"
-													class="text-danger mt-2"
-												>
-													{{ alerts.phone_number }}
-												</div>
-											</div>
+											{{ alerts.phone_number }}
 										</div>
 									</div>
 								</div>
@@ -517,72 +382,13 @@ watch([country], () => {
                                         <select v-model="role_id" @change="validateForm" id="role" class="form-select select" disabled>
                                             <option value="" disabled>Select role</option>
                                             <option v-for="role in roles" :key="role.id" :value="role.id">
-                                                {{ role.name + ' [' + role.business_name + ']' }}
+                                                {{ role.name }}
                                             </option>
                                         </select>
                                         <!-- Display validation message for role -->
                                         <div v-if="alerts.role_id" class="text-danger mt-2">{{ alerts.role_id }}</div>
                                     </div>
-                                </div>
-                                <!-- Client Field -->
-								<div class="col-lg-4 col-sm-4 col-12">
-									<div class="mb-3">
-										<label class="form-label">Client</label>
-										<select
-											v-model="client_id"
-                                            @change="validateForm"
-											id="client"
-											class="form-select select" disabled
-										>
-											<option value="" disabled>Select client</option>
-											<option
-												v-for="client in clients"
-												:key="client.id"
-												:value="client.id"
-											>
-												{{ client.business_name }}
-											</option>
-										</select>
-										<!-- Display validation message for client -->
-										<div
-											v-if="alerts.client_id"
-											class="text-danger mt-2"
-										>
-											{{ alerts.client_id }}
-										</div>
-									</div>
-								</div>
-
-								<!-- User Type Field -->
-								<div class="col-lg-4 col-sm-4 col-12">
-									<div class="mb-3">
-										<label class="form-label">Account type</label>
-										<select
-											v-model="user_type"
-											@change="validateForm"
-											id="user_type"
-											class="form-select select" disabled
-										>
-											<option value="">
-												Select account type
-											</option>
-											<option
-												v-for="type in filteredAccountTypes"
-												:key="type"
-												:value="type"
-											>
-												{{ type }}
-											</option>
-										</select>
-										<!-- Display validation message for user_type -->
-										<div
-											v-if="alerts.user_type"
-											class="text-danger mt-2"
-										>
-											{{ alerts.user_type }}
-										</div>
-									</div>
-								</div>
+                                </div>                                
                             </div>
                             <!-- Row end -->
                         </div>

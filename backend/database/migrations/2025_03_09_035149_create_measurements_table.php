@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('measurements', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('name')->unique();
             $table->enum('environment', ['PRODUCTION', 'TEST', 'DEVELOPMENT']);
             $table->unsignedBigInteger('created_by')->nullable(); // Define column without constraint
             $table->unsignedBigInteger('updated_by')->nullable(); // Define column without constraint

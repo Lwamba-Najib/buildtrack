@@ -14,7 +14,7 @@ class EmailSettings extends Model
     protected $fillable = [
         'sender_name',
         'sender_email',
-        'smtp_driver',
+        'smtp_auth',
         'smtp_host',
         'smtp_username',
         'smtp_password',

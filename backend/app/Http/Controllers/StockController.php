@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 
 use App\Models\Stock;
+use Illuminate\Support\Str;
 use App\Models\StockBalance;
 use Illuminate\Http\Request;
 use App\Enums\PaginationSize;
@@ -99,8 +100,8 @@ class StockController extends Controller
             $validated = request()->validate([
                 'product_id' => 'required|exists:products,id',
                 'brand_id' => 'required|exists:brands,id',
-                'measurement_id' => 'required|exists:measurements,id',
                 'quantity' => 'required|integer|min:1',
+                'measurement_id' => 'required|exists:measurements,id',
                 'unit_price' => 'required|integer|min:1',
                 'sale_price' => 'required|integer|min:1',
                 'min_stock_level' => 'required|integer|min:1',
@@ -110,10 +111,28 @@ class StockController extends Controller
                 'created_by' => 'nullable',
             ]);
 
-            // Calculate total_cost
-            $validated['total_cost'] = $validated['quantity'] * $validated['unit_price'];
+            // Check if a stock entry with the same product, brand, unit_price, and sale_price exists
+            $existingStock = Stock::where('product_id', $validated['product_id'])
+                ->where('brand_id', $validated['brand_id'])
+                ->where('unit_price', $validated['unit_price'])
+                ->where('sale_price', $validated['sale_price'])
+                ->first();
 
-            // Set created_by to the current user
+            if ($existingStock) {
+                // Reuse batch_number and min_stock_level if the stock entry exists
+                $batch_number = $existingStock->batch_number;
+                $validated['min_stock_level'] = $existingStock->min_stock_level;
+            } else {
+                // Generate a unique batch number
+                do {
+                    $uuid = strtoupper(substr(str_replace('-', '', Str::uuid()->toString()), 0, 14));
+                } while (str_starts_with($uuid, '0'));
+
+                $batch_number = 'BN' . $uuid;
+            }
+
+            $validated['batch_number'] = $batch_number;
+            $validated['total_cost'] = $validated['quantity'] * $validated['unit_price'];
             $validated['created_by'] = auth()->user()->id;
 
             // Start a database transaction
@@ -122,18 +141,20 @@ class StockController extends Controller
             // Create stock
             $newStock = Stock::create($validated);
 
-            // Update stock balance
+            // Ensure batch_number is unique in stock_balances
             $stockBalance = StockBalance::firstOrCreate(
                 [
                     'product_id' => $validated['product_id'],
                     'brand_id' => $validated['brand_id'],
                     'measurement_id' => $validated['measurement_id'],
+                    'batch_number' => $batch_number, // Ensure unique batch for stock balance
                 ],
                 [
                     'balance' => 0,
                 ]
             );
 
+            // Update stock balance
             $stockBalance->increment('balance', $validated['quantity']);
 
             // Commit the transaction
@@ -197,23 +218,54 @@ class StockController extends Controller
             // Start a database transaction
             DB::beginTransaction();
 
-            // Update stock balance
-            $stockBalance = StockBalance::firstOrCreate(
+            // Check if unit_price or sale_price has changed
+            $batchChanged = $stock->unit_price !== $validated['unit_price'] || $stock->sale_price !== $validated['sale_price'];
+
+            if ($batchChanged) {
+                // Generate a new batch number since unit_price or sale_price changed
+                do {
+                    $uuid = strtoupper(substr(str_replace('-', '', Str::uuid()->toString()), 0, 14));
+                } while (str_starts_with($uuid, '0'));
+
+                $validated['batch_number'] = 'BN' . $uuid;
+            } else {
+                // Keep the existing batch number
+                $validated['batch_number'] = $stock->batch_number;
+            }
+
+            // Ensure that all stock records with the same batch_number have the same min_stock_level
+            if (!$batchChanged) {
+                $validated['min_stock_level'] = Stock::where('batch_number', $stock->batch_number)->value('min_stock_level');
+            }
+
+            // Update stock balance for the previous batch
+            $oldStockBalance = StockBalance::where('product_id', $stock->product_id)
+                ->where('brand_id', $stock->brand_id)
+                ->where('measurement_id', $stock->measurement_id)
+                ->where('batch_number', $stock->batch_number)
+                ->first();
+
+            if ($oldStockBalance) {
+                $oldStockBalance->decrement('balance', $stock->quantity);
+            }
+
+            // Update or create stock balance for the new batch
+            $newStockBalance = StockBalance::firstOrCreate(
                 [
                     'product_id' => $validated['product_id'],
                     'brand_id' => $validated['brand_id'],
                     'measurement_id' => $validated['measurement_id'],
+                    'batch_number' => $validated['batch_number'], // Ensure batch uniqueness in stock_balances
                 ],
                 [
                     'balance' => 0,
                 ]
             );
 
-            // Adjust balance based on the difference in quantity
-            $quantityDifference = $validated['quantity'] - $stock->quantity;
-            $stockBalance->increment('balance', $quantityDifference);
+            // Adjust the balance with the updated quantity
+            $newStockBalance->increment('balance', $validated['quantity']);
 
-            // Update the stock
+            // Update the stock record
             $stock->update($validated);
 
             // Commit the transaction

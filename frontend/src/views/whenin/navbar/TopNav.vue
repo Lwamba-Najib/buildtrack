@@ -80,7 +80,7 @@ const checkSessionTimeout = async () => {
 const fetchSettings = async () => {
     try {
         const token = localStorage.getItem("token");
-        const response = await axios.get("/generalsettingslist", {
+        const response = await axios.get("/appearancesettingslist", {
             headers: {
                 Authorization: `Bearer ${token}`,
             },

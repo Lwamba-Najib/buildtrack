@@ -5,6 +5,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\BrandController;
+use App\Http\Controllers\SalesController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\TrashController;
 use App\Http\Controllers\AccessController;
@@ -17,11 +18,11 @@ use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\AddressBookController;
 use App\Http\Controllers\MeasurementController;
 use App\Http\Controllers\StockBalanceController;
-use App\Http\Controllers\SalesController;
 use App\Http\Controllers\EmailSettingsController;
 use App\Http\Controllers\ApplicationLogController;
-use App\Http\Controllers\GeneralSettingsController;
 use App\Http\Controllers\SecuritySettingsController;
+use App\Http\Controllers\AppearanceSettingsController;
+use App\Http\Controllers\BusinessInfoSettingsController;
 use Laravel\Sanctum\Http\Controllers\CsrfCookieController;
 
 /*
@@ -43,7 +44,7 @@ Route::post('/login', [AccessController::class, 'authenticate']);
 Route::post('/verifyotp', [AccessController::class, 'verifyOTP']);
 Route::post('/getotp', [AccessController::class, 'getOTP']);
 Route::post('/forgotpassword', [AccessController::class, 'forgotpassword']);
-Route::get('getlogofavicon', [GeneralSettingsController::class, 'index']);
+Route::get('getlogofavicon', [AppearanceSettingsController::class, 'index']);
 
 ########################### PROTECTED ROUTES ###########################
 Route::middleware('auth:sanctum')->group(function () {
@@ -160,7 +161,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('saleslist', [SalesController::class, 'index']);
     Route::get('saleshow/{id}', [SalesController::class, 'show']);
     Route::get('getproductsinstock', [SalesController::class, 'getProductsInstock']);
-    Route::get('getbrandsbyproductinstock/{productId}', [SalesController::class, 'getBrandsByProductInstock']);
+    Route::get('getbatchnumbersbyproductinstock/{productId}', [SalesController::class, 'getBatchNumbersByProductInstock']);
+    Route::get('getbrandsbybatchnumberinstock/{batchNumber}', [SalesController::class, 'getBrandsByBatchNumberInstock']);
     Route::get('getmeasurementsbybrandinstock/{brandId}', [SalesController::class, 'getMeasurementsByBrandInstock']);
     Route::get('getsalepriceinstock', [SalesController::class, 'getSalePriceInstock']);
     Route::post('salesstore', [SalesController::class, 'store']);
@@ -168,9 +170,14 @@ Route::middleware('auth:sanctum')->group(function () {
     //Address Book
     Route::get('addressbook/{phone_number}', [AddressBookController::class, 'show']);
 
-    // General Settings Routes
-    Route::get('generalsettingslist', [GeneralSettingsController::class, 'index']);
-    Route::post('generalsettingsstore', [GeneralSettingsController::class, 'store']);
+    // Business Info Settings Routes
+    Route::get('businessinfosettingslist', [BusinessInfoSettingsController::class, 'index']);
+    Route::post('businessinfosettingsstore', [BusinessInfoSettingsController::class, 'store']);
+    Route::get('getbusinessinfosettings', [BusinessInfoSettingsController::class, 'getBusinessInfoSettings']);
+
+    // Appearance Settings Routes
+    Route::get('appearancesettingslist', [AppearanceSettingsController::class, 'index']);
+    Route::post('appearancesettingsstore', [AppearanceSettingsController::class, 'store']);
 
     // Email Settings Routes
     Route::get('emailsettingslist', [EmailSettingsController::class, 'index']);

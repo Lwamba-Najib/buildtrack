@@ -11,11 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('general_settings', function (Blueprint $table) {
+        Schema::create('appearance_settings', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('logo')->nullable();
             $table->string('favicon')->nullable();
+            $table->string('wallpaper')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
@@ -28,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('general_settings');
+        Schema::dropIfExists('appearance_settings');
     }
 };

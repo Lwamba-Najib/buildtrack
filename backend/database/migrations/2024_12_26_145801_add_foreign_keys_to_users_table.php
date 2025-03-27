@@ -17,12 +17,6 @@ return new class extends Migration
                 ->references('id')
                 ->on('roles')
                 ->cascadeOnDelete();
-
-            // Add foreign key for client_id
-            $table->foreign('client_id')
-                ->references('id')
-                ->on('clients')
-                ->cascadeOnDelete();
         });
     }
 
@@ -33,7 +27,6 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->dropForeign(['role_id']);
-            $table->dropForeign(['client_id']);
         });
     }
 };

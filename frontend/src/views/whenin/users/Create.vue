@@ -7,9 +7,6 @@ import { useStore } from 'vuex';
 import { useCustomUtils } from "@/utils/customUtils";
 
 useCustomUtils();
-// Access Vuex store
-const store = useStore();
-// Fetch public countries
  
 // Reactive variable to store roles fetched from API
 const roles = ref([]);
@@ -22,6 +19,7 @@ const phone_number = ref("");
 const email = ref("");
 const role_id = ref("");
 const environment = ref("");
+const shouldRedirect = ref(true); // New reactive variable for redirection control
 const alerts = reactive({
 	success: "",
 	error: "",
@@ -35,6 +33,21 @@ const alerts = reactive({
 });
 const isLoading = ref(false);
 const router = useRouter();
+// Access Vuex store
+const store = useStore();
+
+// Save the selected option to localStorage
+const saveRedirectPreference = (value) => {
+	localStorage.setItem("shouldRedirect", value);
+};
+
+// Load the saved option from localStorage
+const loadRedirectPreference = () => {
+	const savedPreference = localStorage.getItem("shouldRedirect");
+	if (savedPreference !== null) {
+		shouldRedirect.value = savedPreference === "true";
+	}
+};
 // Helper function to retrieve token
 const getToken = () => {
 	const token = localStorage.getItem("token");
@@ -158,7 +171,9 @@ const handleSubmit = async () => {
 		// Check if the user creation was successful
 		if (response.data.success) {
 			alerts.success = "User created successfully!";
-			setTimeout(() => router.push("/userlist"), 1000); // Redirect after 1 second
+			if (shouldRedirect.value) {
+				setTimeout(() => router.push("/userlist"), 1000); // Redirect after 1 second
+			}
 		} else {
 			alerts.error =response.data.message || "Failed to create user. Please try again.";
 		}
@@ -229,6 +244,15 @@ const initializeSelect2 = () => {
 		.on("select2:unselecting", function (e) {
 			//console.log("Clearing select field:", $(this).attr("id"));
 			// Optionally prevent the clearing action (e.preventDefault())
+		})
+        // Autofocus on the search field when dropdown opens
+		.on("select2:open", function () {
+			setTimeout(() => {
+				let searchField = document.querySelector(".select2-container--open .select2-search__field");
+				if (searchField) {
+					searchField.focus();
+				}
+			}, 50); // Slight delay to ensure input is available
 		});
 	});
 };
@@ -246,7 +270,9 @@ watch([gender,role_id,environment], (newValue) => {
 	validateForm();
 });
 // Initial data fetch
+// Initial data fetch
 onMounted(() => {
+	loadRedirectPreference(); // Load the saved redirect preference
 	getRoles(); // Fetch roles when the component is mounted
 	initializeSelect2(); // Initialize Select2 after the DOM is rendered
 });
@@ -459,14 +485,13 @@ onMounted(() => {
 								</div>
 
 								<!-- Environment Field -->
-								<div class="col-12">
+								<div class="col-lg-6 col-sm-4 col-12">
 									<div class="mb-3">
 										<label class="form-label">Environment</label>
 										<div>
 											<div class="form-check form-check-inline">
 												<input
 													v-model="environment"
-													@input="validateForm"
 													class="form-check-input"
 													type="radio"
 													name="environment"
@@ -482,7 +507,6 @@ onMounted(() => {
 											<div class="form-check form-check-inline">
 												<input
 													v-model="environment"
-													@input="validateForm"
 													class="form-check-input"
 													type="radio"
 													name="environment"
@@ -498,7 +522,6 @@ onMounted(() => {
 											<div class="form-check form-check-inline">
 												<input
 													v-model="environment"
-													@input="validateForm"
 													class="form-check-input"
 													type="radio"
 													name="environment"
@@ -518,6 +541,45 @@ onMounted(() => {
 											class="text-danger mt-2"
 										>
 											{{ alerts.environment }}
+										</div>
+									</div>
+								</div>
+								<!-- Save Button and Redirect Options -->
+								<div class="col-lg-6 col-sm-4 col-12">
+									<div class="mb-3">
+										<!-- Generalized Label -->
+										<label class="form-label">After Save Action</label>
+										<div>
+											<div class="form-check form-check-inline">
+												<input
+													v-model="shouldRedirect"
+													class="form-check-input"
+													type="radio"
+													name="redirectOption"
+													:value="true"
+													id="inlineRedirect"
+													@change="saveRedirectPreference(true)"
+												/>
+												<label
+													class="form-check-label"
+													for="inlineRedirect"
+												>Save and go to list</label>
+											</div>
+											<div class="form-check form-check-inline">
+												<input
+													v-model="shouldRedirect"
+													class="form-check-input"
+													type="radio"
+													name="redirectOption"
+													:value="false"
+													id="inlineNoRedirect"
+													@change="saveRedirectPreference(false)"
+												/>
+												<label
+													class="form-check-label"
+													for="inlineNoRedirect"
+												>Save and stay</label>
+											</div>
 										</div>
 									</div>
 								</div>

@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
             $table->foreignId('brand_id')->constrained('brands')->cascadeOnDelete();
             $table->foreignId('measurement_id')->constrained('measurements')->cascadeOnDelete();
+            $table->string('batch_number')->unique();
             $table->integer('quantity');
             $table->integer('unit_price');
             $table->integer('total_cost');

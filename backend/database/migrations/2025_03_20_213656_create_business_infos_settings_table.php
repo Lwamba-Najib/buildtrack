@@ -11,16 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('email_settings', function (Blueprint $table) {
+        Schema::create('business_info_settings', function (Blueprint $table) {
             $table->id();
-            $table->string('sender_name');
-            $table->string('sender_email');
-            $table->string('smtp_auth');
-            $table->string('smtp_host');
-            $table->string('smtp_username');
-            $table->string('smtp_password');
-            $table->string('smtp_encryption');
-            $table->bigInteger('smtp_port');
+            $table->string('business_name');
+            $table->string('business_reg_number')->unique();
+            $table->string('business_tin')->unique();
+            $table->string('business_slogan');
+            $table->string('business_address');
+            $table->string('business_email')->unique();
+            $table->string('business_contact')->unique();
+            $table->string('business_website');
+            $table->string('business_legal_disclaimer');
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
@@ -33,6 +34,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('email_settings');
+        Schema::dropIfExists('business_info_settings');
     }
 };

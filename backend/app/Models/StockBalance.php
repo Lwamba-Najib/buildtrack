@@ -15,6 +15,7 @@ class StockBalance extends Model
         'product_id',
         'brand_id',
         'measurement_id',
+        'batch_number',
         'balance',
     ];
 

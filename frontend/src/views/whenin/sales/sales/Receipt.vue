@@ -20,6 +20,8 @@ const sale = ref({
     total_amount: 0,
     discount: 0,
 });
+const businessInfoSettings = ref([]);
+const logoSrc = ref("/assets/images/logo.png");
 const isLoading = ref(true);
 
 // Function to get the token from localStorage
@@ -27,6 +29,29 @@ const getToken = () => {
     const token = localStorage.getItem("token");
     if (!token) throw new Error("No token found");
     return token;
+};
+
+// Function to fetch business info settings
+const fetchBusinessInfoSettings = async () => {
+    isLoading.value = true; // Optionally set a loading state
+    try {
+        const token = getToken(); // Retrieve the token
+        const response = await axios.get("/getbusinessinfosettings", {
+            headers: {
+                Authorization: `Bearer ${token}`, // Include the token in the request
+            },
+        });
+
+        if (response.status === 200 && response.data.success) {
+            businessInfoSettings.value = response.data.data; // Directly assign the object
+        } else {
+            console.error('Error fetching business info settings:', response.statusText);
+        }
+    } catch (error) {
+        console.error('Error fetching business info settings:', error);
+    } finally {
+        isLoading.value = false; // Optionally reset the loading state
+    }
 };
 
 // Function to fetch sale details from the API
@@ -40,11 +65,8 @@ const fetchDetails = async () => {
             },
         });
 
-        console.log("API Response:", response.data); // Debug: Log the API response
-
         if (response.status === 200 && response.data.success) {
             sale.value = response.data.data; // Assign the sale object
-            console.log("Sale Object:", sale.value); // Debug: Log the sale object
         } else {
             console.error('Error fetching sale:', response.statusText);
         }
@@ -57,42 +79,127 @@ const fetchDetails = async () => {
 
 // Fetch sale details when the component is mounted
 onMounted(() => {
+    fetchBusinessInfoSettings();
     fetchDetails();
 });
 
 // Function to print the receipt
 const printReceipt = () => {
-    const printContent = document.querySelector('.printable-receipt').innerHTML;
-    const printWindow = window.open('', '_blank');
-    
+    // Get the printable receipt content
+    const printOut = document.getElementById('printable-receipt').innerHTML;
+
+    // Get all styles from the current document
+    const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+        .map(el => el.outerHTML)
+        .join('');
+
+    // Create a new window for printing
+    const printWindow = window.open('', '', 'height=600,width=800');
+    if (!printWindow) {
+        alert('Please allow popups for this site to print the receipt.');
+        return;
+    }
+
+    // Write the HTML content to the new window, including the styles
     printWindow.document.write(`
         <html>
             <head>
-                <title>Receipt</title>
+                <title>Print Receipt</title>
+                ${styles}
                 <style>
-                    body { font-family: Arial, sans-serif; padding: 20px; }
-                    .card { border: none !important; box-shadow: none !important; }
-                    .table { width: 100%; border-collapse: collapse; }
-                    .table, .table th, .table td { border: 1px solid black; padding: 8px; text-align: left; }
+                    body {
+                        font-family: Arial, sans-serif;
+                        margin: 0;
+                        padding: 0;
+                    }
+                    .layout-receipt {
+                        width: auto;
+                        margin: 0 auto;
+                        padding: 20px;
+                        border: 1px solid #000;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                    }
+                    th, td {
+                        padding: 8px;
+                        text-align: left;
+                        border: 1px solid #000;
+                    }
+                    th {
+                        background-color: #B22222;
+                        color: white;
+                    }
+                    .custom-border {
+                        border: 3px dashed #B22222;
+                        border-radius: 10px;
+                        padding: 5px;
+                    }
+                    .text-start {
+                        text-align: left;
+                    }
+                    .text-end {
+                        text-align: right;
+                    }
+                    .text-center {
+                        text-align: center;
+                    }
+                    .seperator-line {
+                        border-top: 1px solid #000;
+                    }
+                    .seperator-line-double {
+                        border-top: 2px solid #000;
+                    }
+                    @media print {
+                        body {
+                            font-size: 12pt;
+                        }
+                        .layout-receipt {
+                            border: none;
+                        }
+                        table {
+                            width: 100%;
+                        }
+                        th, td {
+                            padding: 6px;
+                        }
+                        .custom-border {
+                            border: 3px dashed #B22222;
+                            border-radius: 10px;
+                            padding: 5px;
+                        }
+                    }
                 </style>
             </head>
             <body>
-                ${printContent}
+                <div class="layout-receipt">
+                    ${printOut}
+                </div>
             </body>
         </html>
     `);
 
-    printWindow.document.close(); // Close document to finish writing
-    printWindow.focus();
-    printWindow.print(); // Trigger print dialog
-    printWindow.close(); // Close the print window after printing
+    printWindow.document.close();
+
+    // Print the receipt
+    printWindow.print();
+
+    // Close the print window after a short delay
+    setTimeout(() => {
+        printWindow.close();
+    }, 100); // 100ms delay to ensure the print dialog is closed
 };
 
 // Function to format currency (assuming this is missing in your original code)
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'UGX' }).format(value);
 };
+const pluralizeMeasurement = (measurement, quantity) => {
+    return quantity > 1 ? `${measurement}(s)` : measurement;
+};
 </script>
+
 <template>
     <section>
         <!-- App hero header starts -->
@@ -149,20 +256,24 @@ const formatCurrency = (value) => {
                                         <LoadingIndicator :isLoading="isLoading" />
                                         <div class="row d-flex justify-content-center my-2 my-lg-0">
                                             <div class="col-8">
-                                                <div class="printable-receipt">
+                                                <div id="printable-receipt">
                                                     <div class="layout-receipt">
                                                         <div class="table-responsive">
                                                             <table class="table table-borderless">
                                                                 <tbody>
                                                                     <tr style="line-height: 2;">
+                                                                        <td colspan="2" class="text-center align-middle" style="border: none;">
+                                                                            <img :src="logoSrc" class="logo custom-border" alt="Logo" style="width: 100px; height: 100px;"/>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr style="line-height: 2;">
                                                                         <td class="align-left text-start" style="border: none;">
                                                                             <p class="text-start m-0">
-                                                                                Venus Llc, 9990 St. <br />
-                                                                                5000 Church Street, Suite 550<br />
-                                                                                Huntsville, Alabama, 99990
+                                                                                {{ businessInfoSettings.business_name }} <br />
+                                                                                {{ (businessInfoSettings.business_address || 'No address') + ', (' + (businessInfoSettings.business_contact || 'No contact') + ')' }}
                                                                             </p>
                                                                         </td>
-                                                                        <td class="text-end">
+                                                                        <td class="text-end" style="border: none;">
                                                                             <p class="text-end m-0">
                                                                                 Payment Date: <u><span class="pl-5">{{ parseDate(sale.created_at) || 'NA' }}</span></u><br>
                                                                                 Receipt#: <u><span class="text-bold pl-5">{{ sale.batch_number }}</span></u>
@@ -171,23 +282,28 @@ const formatCurrency = (value) => {
                                                                     </tr>
                                                                     <tr>
                                                                         <td colspan="2" style="border: none;">
-                                                                            <hr style="border-top: 1px solid black;" class="seperator-line-dashed"/>
-                                                                            <hr style="border-top: 1px solid black;" class="seperator-line-dashed"/>
+                                                                            <hr style="border-top: 1px solid #000;" class="seperator-line-double"/>
+                                                                            <hr style="border-top: 1px solid #000;" class="seperator-line-double"/>
+                                                                            <br>
                                                                         </td>
                                                                     </tr>
                                                                     <tr>
                                                                         <td class="align-left text-start" style="border: none;">
                                                                             <strong>From:</strong>
                                                                             <p class="text-start m-0 mt-2" style="line-height: 4px;">
-                                                                                Venus Llc, 9990 St. <hr class="seperator-line"/>
-                                                                                5000 Church Street, Suite 550<hr class="seperator-line"/>
+                                                                                {{ businessInfoSettings.business_name || 'No name' }}
+                                                                                . <hr class="seperator-line"/>
+                                                                                {{ businessInfoSettings.business_contact || 'No contact' }}
+                                                                                . <hr class="seperator-line"/>
                                                                             </p>
                                                                         </td>
                                                                         <td class="align-middle" style="border: none;">
                                                                             <strong>Sold To:</strong>
-                                                                            <p class="text-end m-0 mt-2" style="line-height: 4px;">
-                                                                                {{ sale.customer_name }}<hr class="seperator-line"/>
-                                                                                {{ sale.customer_phone }}<hr class="seperator-line"/>
+                                                                            <p class="text-begin m-0 mt-2" style="line-height: 4px;">
+                                                                                {{ sale.customer_name || 'No name' }}
+                                                                                . <hr class="seperator-line"/>
+                                                                                {{ sale.customer_phone || 'No contact' }}
+                                                                                . <hr class="seperator-line"/>
                                                                             </p>
                                                                         </td>
                                                                     </tr>
@@ -198,13 +314,11 @@ const formatCurrency = (value) => {
                                                         <div class="row gx-3">
                                                             <div class="col-12">
                                                                 <div class="table-responsive">
-                                                                    <table class="table table-bordered">
+                                                                    <table class="table table-bordered" style="border: none;">
                                                                         <thead>
                                                                             <tr>
-                                                                                <th>ITEM</th>
-                                                                                <th>BRAND</th>
-                                                                                <th>MEASUREMENT</th>
-                                                                                <th>QTY</th>
+                                                                                <th>DESCRIPTION</th>
+                                                                                <th>QUANTITY</th>
                                                                                 <th>UNIT PRICE</th>
                                                                                 <th>TOTAL PRICE</th>
                                                                             </tr>
@@ -212,28 +326,23 @@ const formatCurrency = (value) => {
                                                                         <tbody>
                                                                             <tr v-for="item in sale.items" :key="item.id">
                                                                                 <td>
-                                                                                    <h6>{{ item.product?.name }}</h6>
-                                                                                    <p>{{ item.product?.description }}</p>
+                                                                                    {{ item.product?.name }} 
+                                                                                    ({{ item.brand?.name || 'N/A' }}, 
+                                                                                    {{ item.measurement?.name ? pluralizeMeasurement(item.measurement.name, item.quantity) : 'N/A' }})
                                                                                 </td>
-                                                                                <td>
-                                                                                    <h6>{{ item.brand?.name || 'N/A' }}</h6>
-                                                                                </td>
-                                                                                <td>
-                                                                                    <h6>{{ item.measurement?.name || 'N/A' }}</h6>
-                                                                                </td>
-                                                                                <td>
+                                                                                <td class="text-end">
                                                                                     <h6>{{ Number(item.quantity).toLocaleString() || 0 }}</h6>
                                                                                 </td>
-                                                                                <td>
+                                                                                <td class="text-end">
                                                                                     <h6>{{ formatCurrency(item.unit_price) }}</h6>
                                                                                 </td>
-                                                                                <td>
+                                                                                <td class="text-end">
                                                                                     <h6>{{ formatCurrency(item.total_price) }}</h6>
                                                                                 </td>
                                                                             </tr>
-                                                                            <tr>
-                                                                                <td colspan="4">
-                                                                                    <h5>Payment Method: {{ sale.payment_method || 'Not specified' }}</h5>
+                                                                            <tr class="no-border">
+                                                                                <td colspan="2" class="no-bottom-border" style="border: none;">
+                                                                                    <h5>Payment Method:</h5>
                                                                                     <div class="form-check">
                                                                                         <input
                                                                                             type="radio"
@@ -279,25 +388,35 @@ const formatCurrency = (value) => {
                                                                                         <label class="form-check-label" for="radio4">Card</label>
                                                                                     </div>
                                                                                 </td>
-                                                                                <td>
-                                                                                    <p>Subtotal</p>
-                                                                                    <p>Discount</p>
-                                                                                    <p>VAT</p>
-                                                                                    <h5 class="mt-4 text-blue">Total UGX</h5>
+                                                                                <td class="text-end" style="border: none; flex-direction: column;  padding: 0px;">
+                                                                                    <div style="padding-top: 5px; padding-right: 5px;">Subtotal: </div>
+                                                                                    <div style="padding-top: 9px; padding-right: 5px;">Discount: </div>
+                                                                                    <div style="padding-top: 10px; padding-right: 5px;">VAT: </div>
+                                                                                    <div style="padding-top: 5px; padding-right: 5px;" class="pt-md-3 text-blue">Total UGX: </div>
                                                                                 </td>
-                                                                                <td>
-                                                                                    <p>{{ formatCurrency(sale.total_amount) }}</p>
-                                                                                    <p>{{ formatCurrency(sale.discount) }}</p>
-                                                                                    <p>00%</p>
-                                                                                    <h5 class="mt-4 text-blue">{{ formatCurrency(sale.total_amount - sale.discount) }}</h5>
+                                                                                <td class="text-end" style=" flex-direction: column; border: 1px solid #000; padding: 0px;">
+                                                                                    <div style="border-bottom: 1px solid #000; border-left: 1px solid #000; border-right: 1px solid #000; padding: 5px;">{{ formatCurrency(sale.total_amount) }}</div>
+                                                                                    <div style="border-bottom: 1px solid #000; border-left: 1px solid #000; border-right: 1px solid #000; padding: 5px;">{{ formatCurrency(sale.discount) }}</div>
+                                                                                    <div style="border-bottom: 1px solid #000; border-left: 1px solid #000; border-right: 1px solid #000; padding: 5px;">00%</div>
+                                                                                    <div style="border-bottom: 1px solid #000; border-left: 1px solid #000; border-right: 1px solid #000; padding: 5px;" class="pt-md-3 text-blue">{{ formatCurrency(sale.total_amount - sale.discount) }}</div>
                                                                                 </td>
                                                                             </tr>
-                                                                            <tr>
-                                                                                <td colspan="6" class="text-center align-middle">
+                                                                            <tr class="no-border">
+                                                                                <td colspan="6" style="border: none;">
+                                                                                    <br>
+                                                                                    <hr style="border-top: 1px solid #000;" class="seperator-line-double"/>
+                                                                                    <hr style="border-top: 1px solid #000;" class="seperator-line-double"/>
+                                                                                    <br>
+                                                                                </td>
+                                                                            </tr>
+                                                                            <tr class="no-border">
+                                                                                <td colspan="6" class="text-center align-middle" style="border: none;">
                                                                                     <h6 class="text-red">THANK YOU FOR YOUR PURCHASE!</h6>
+                                                                                    <hr class="seperator-line"/>
+                                                                                {{ businessInfoSettings.business_legal_disclaimer || 'No legal disclaimer' }}<br>
                                                                                     <small>
-                                                                                        for questions or any concerns, please contact<br>
-                                                                                        +256700000000
+                                                                                        For questions or any concerns, please contact<br>
+                                                                                        {{ businessInfoSettings.business_contact || 'No contact' }}
                                                                                     </small>
                                                                                 </td>
                                                                             </tr>
@@ -336,29 +455,167 @@ const formatCurrency = (value) => {
 </template>
 
 <style scoped>
-.layout-receipt{
+.custom-border {
+    border: 3px dashed #B22222;
+    border-radius: 10px;
+    padding: 5px;
+}
+.layout-receipt {
     border: double;
     padding: 2%;
 }
-.seperator-line{
+hr{
+    color: #000000;
+    background: #000000;
+    border: #000000;
+}
+.seperator-line {
     border: 0.01em solid #000000 !important;
 }
-.seperator-line-dotted{
+.seperator-line-dotted {
     border: 0.01em dotted #000000 !important;
     margin: 1% !important;
 }
-.seperator-line-dashed{
-    border: 0.01em dashed #000000 !important;
-    margin: 1% !important;
+.seperator-line-dashed {
+    border: 0.02em dashed #000000 !important;
+    margin: 0.5% !important;
 }
-.seperator-line-double{
-    border: 0.01em double #000000 !important;
-    margin: 1% !important;
+.seperator-line-double {
+    border: 0.02em double #000000 !important;
+    margin: 0.2% !important;
 }
-.seperator-line-hidden{
+.seperator-line-hidden {
     border: none !important;
 }
-table > thead > tr > th{
-    background: #87a5eb;
+table > thead > tr > th {
+    background: #B22222;
+    color: aliceblue;
+}
+table > thead > tr > td {
+    border: 1px solid #000000;
+}
+.no-bottom-border {
+    border-bottom: none !important;
+}
+tr.no-border, tr.no-border td {
+    border: none !important;
+}
+@media print {
+    /* Ensure background colors and images are printed */
+    * {
+        -webkit-print-color-adjust: exact !important; /* Chrome, Safari */
+        print-color-adjust: exact !important; /* Standard */
+    }
+
+    /* Reset layout for printing */
+    #content, #page {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        float: none !important;
+    }
+
+    /* Set page margins and size */
+    @page {
+        size: A4 portrait !important;
+        margin: 2cm !important;
+    }
+
+    /* Base styles for printing */
+    body {
+        font: 13pt Georgia, "Times New Roman", Times, serif !important;
+        line-height: 1.3 !important;
+        background: #fff !important;
+        color: #000 !important;
+    }
+
+    tr.no-border, tr.no-border td {
+        border: none !important;
+    }
+
+    h1 {
+        font-size: 24pt !important;
+    }
+
+    h2, h3, h4 {
+        font-size: 14pt !important;
+        margin-top: 25px !important;
+    }
+
+    /* Avoid breaking elements across pages */
+    a, blockquote, h1, h2, h3, h4, h5, h6, img, table, pre {
+        page-break-inside: avoid !important;
+    }
+
+    ul, ol, dl {
+        page-break-before: avoid !important;
+    }
+
+    /* Link styling for print */
+    a:link, a:visited, a {
+        background: transparent !important;
+        color: #520 !important;
+        font-weight: bold !important;
+        text-decoration: underline !important;
+        text-align: left !important;
+    }
+
+    a[href^=http]:after {
+        content: " <" attr(href) "> " !important;
+    }
+
+    article a[href^="#"]:after {
+        content: "" !important;
+    }
+
+    a:not(:local-link):after {
+        content: " <" attr(href) "> " !important;
+    }
+
+    /* Hide unnecessary elements */
+    #header-widgets, nav, aside.mashsb-container, 
+    .sidebar, .mashshare-top, .mashshare-bottom, 
+    .content-ads, .make-comment, .author-bio, 
+    .heading, .related-posts, #decomments-form-add-comment, 
+    #breadcrumbs, #footer, .post-byline, .meta-single, 
+    .site-title img, .post-tags, .readability {
+        display: none !important;
+    }
+
+    /* Add custom messages before and after content */
+    .entry:after {
+        content: " All rights reserved. (c) 2023 Your Company" !important;
+        color: #999 !important;
+        font-size: 1em !important;
+        padding-top: 30px !important;
+    }
+
+    #header:before {
+        content: " Thank you for printing our receipt." !important;
+        color: #777 !important;
+        font-size: 1em !important;
+        padding-top: 30px !important;
+        text-align: center !important;
+    }
+
+    /* Define important elements */
+    p, address, li, dt, dd, blockquote {
+        font-size: 100% !important;
+    }
+
+    /* Set font for code examples */
+    code, pre { 
+        font-family: "Courier New", Courier, mono !important;
+    }
+
+    ul, ol {
+        list-style: square !important; 
+        margin-left: 18pt !important;
+        margin-bottom: 20pt !important;
+    }
+
+    li {
+        line-height: 1.6em !important;
+    }
 }
 </style>

@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, reactive } from "vue";
+import { onMounted, ref, reactive, watch } from "vue";
 import axios from "@/axios"; // Ensure axios is properly configured
 import { useRouter } from "vue-router";
 import { useCustomUtils } from "@/utils/customUtils";
@@ -8,7 +8,7 @@ useCustomUtils();
 // Initialize reactive variables for form fields, alerts, and loading state
 const sender_name = ref("");
 const sender_email = ref("");
-const smtp_driver = ref("");
+const smtp_auth = ref("");
 const smtp_host = ref("");
 const smtp_username = ref("");
 const smtp_password = ref("");
@@ -19,7 +19,7 @@ const alerts = reactive({
 	error: "",
 	sender_name: "",
 	sender_email: "",
-	smtp_driver: "",
+	smtp_auth: "",
 	smtp_host: "",
 	smtp_username: "",
 	smtp_password: "",
@@ -61,7 +61,7 @@ const fetchEmailSettings = async () => {
 			const emailSettings = response.data.data;
 			sender_name.value = emailSettings.sender_name;
 			sender_email.value = emailSettings.sender_email;
-			smtp_driver.value = emailSettings.smtp_driver;
+			smtp_auth.value = emailSettings.smtp_auth;
 			smtp_host.value = emailSettings.smtp_host;
 			smtp_username.value = emailSettings.smtp_username;
 			smtp_encryption.value = emailSettings.smtp_encryption;
@@ -74,6 +74,23 @@ const fetchEmailSettings = async () => {
 	} finally {
 		isLoading.value = false; // Set loading state to false after request completes
 	}
+};
+
+// Define SMTP Encryption Options and Corresponding Ports
+const smtpEncryptionOptions = ref([
+    { value: 'ENCRYPTION_STARTTLS', label: 'STARTTLS', port: '587' },
+    { value: 'ENCRYPTION_TLS', label: 'TLS', port: '587' },
+    { value: 'ENCRYPTION_SMTPS', label: 'SMTPS', port: '465' },
+    { value: 'ENCRYPTION_NONE', label: 'None', port: '25' }
+]);
+// Function to update SMTP Port based on selected SMTP Encryption
+const updateSmtpPort = () => {
+    const selectedOption = smtpEncryptionOptions.value.find(option => option.value === smtp_encryption.value);
+    if (selectedOption) {
+        smtp_port.value = selectedOption.port;
+    } else {
+        smtp_port.value = "";
+    }
 };
 
 // Function to validate the form fields
@@ -99,9 +116,9 @@ const validateForm = () => {
 		isValid = false;
 	}
 
-	// Validate smtp_driver field
-	if (!smtp_driver.value) {
-		alerts.smtp_driver = "SMTP driver is required.";
+	// Validate smtp_auth field
+	if (!smtp_auth.value) {
+		alerts.smtp_auth = "SMTP auth is required.";
 		isValid = false;
 	}
 
@@ -159,7 +176,7 @@ const handleSubmit = async () => {
 			{
 				sender_name: sender_name.value,
 				sender_email: sender_email.value,
-				smtp_driver: smtp_driver.value,
+				smtp_auth: smtp_auth.value,
 				smtp_host: smtp_host.value,
 				smtp_username: smtp_username.value,
 				smtp_password: smtp_password.value,
@@ -190,11 +207,61 @@ const handleSubmit = async () => {
 		isLoading.value = false; // Set loading state to false after request completes
 	}
 };
+// Initialize Select2 on all select fields
+const initializeSelect2 = () => {
+  	$(function () {
+		// Apply Select2 to all select elements
+		$(".select")
+		.select2({
+			allowClear: true,
+			placeholder: "Select an option", // Placeholder for better UX
+		})
+		.on("change", function () {
+			const fieldName = $(this).attr("id"); // Get the ID of the select field
+			const newValue = $(this).val(); // Get the new value of the field
 
+			switch (fieldName) {
+				case "smtp_auth":
+					smtp_auth.value = newValue || ""; // Use empty string if cleared
+					break;
+				case "smtp_encryption":
+					smtp_encryption.value = newValue || ""; // Use empty string if cleared
+					updateSmtpPort(); // Ensure the SMTP port updates
+					break;
+				default:
+				console.warn(`Unhandled field: ${fieldName}`);
+			}
+
+			if (!newValue) {
+			//console.log(`${fieldName} was cleared.`);
+			}
+		})
+		// Handle the unselecting event to prevent undefined access
+		.on("select2:unselecting", function (e) {
+			//console.log("Clearing select field:", $(this).attr("id"));
+			// Optionally prevent the clearing action (e.preventDefault())
+		})
+		// Autofocus on the search field when dropdown opens
+		.on("select2:open", function () {
+			setTimeout(() => {
+				let searchField = document.querySelector(".select2-container--open .select2-search__field");
+				if (searchField) {
+					searchField.focus();
+				}
+			}, 50); // Slight delay to ensure input is available
+		});
+	});
+};
 // Fetch email settings when the component is mounted
 onMounted(() => {
+	initializeSelect2(); // Initialize Select2 after the DOM is rendered
 	fetchEmailSettings(); // Fetch initial email settings from the API
 });
+// Reinitialize Select2 and validate form on dependency changes
+watch([smtp_auth, smtp_encryption], () => {    
+    initializeSelect2();
+    validateForm();
+}, { immediate: true }); // Ensure both actions run immediately when dependencies are populated
 </script>
 
 <template>
@@ -307,22 +374,27 @@ onMounted(() => {
 										</div>
 									</div>
 								</div>
-								<!-- SMTP Driver Field -->
+								<!-- SMTP Auth Field -->
 								<div class="col-lg-6 col-sm-4 col-12">
 									<div class="mb-3">
-										<label class="form-label">SMTP Driver</label>
-										<input
-											v-model="smtp_driver"
-											type="text"
-											class="form-control"
-											placeholder="Enter SMTP Driver"
-										/>
-										<!-- Display validation message for SMTP Driver -->
+										<label class="form-label">SMTP Auth</label>
+										<select
+											v-model="smtp_auth"
+											id="smtp_auth"
+											class="form-select select"
+										>
+											<option value="">
+												Select smtp auth
+											</option>
+											<option value="true">True</option>
+											<option value="false">False</option>
+										</select>
+										<!-- Display validation message for smtp_auth -->
 										<div
-											v-if="alerts.smtp_driver"
+											v-if="alerts.smtp_auth"
 											class="text-danger mt-2"
 										>
-											{{ alerts.smtp_driver }}
+											{{ alerts.smtp_auth }}
 										</div>
 									</div>
 								</div>
@@ -387,12 +459,16 @@ onMounted(() => {
 								<div class="col-lg-6 col-sm-4 col-12">
 									<div class="mb-3">
 										<label class="form-label">SMTP Encryption</label>
-										<input
+										<select
 											v-model="smtp_encryption"
-											type="text"
-											class="form-control"
-											placeholder="Enter SMTP Username"
-										/>
+											id="smtp_encryption"
+											class="form-select select"
+										>
+											<option value="">Select SMTP Encryption</option>
+											<option v-for="option in smtpEncryptionOptions" :key="option.value" :value="option.value">
+												{{ option.label }}
+											</option>
+										</select>
 										<!-- Display validation message for SMTP Encryption -->
 										<div
 											v-if="alerts.smtp_encryption"
@@ -402,6 +478,7 @@ onMounted(() => {
 										</div>
 									</div>
 								</div>
+
 								<!-- SMTP Port Field -->
 								<div class="col-lg-6 col-sm-4 col-12">
 									<div class="mb-3">
@@ -411,6 +488,7 @@ onMounted(() => {
 											type="text"
 											class="form-control"
 											placeholder="Enter SMTP Port"
+											:readonly="true"
 										/>
 										<!-- Display validation message for SMTP Port -->
 										<div
