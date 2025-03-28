@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
             $table->foreignId('brand_id')->constrained('brands')->cascadeOnDelete();
             $table->foreignId('measurement_id')->constrained('measurements')->cascadeOnDelete();
-            $table->string('batch_number')->unique();
+            $table->string('batch_number');
             $table->integer('quantity');
             $table->integer('unit_price');
             $table->integer('total_cost');
@@ -29,6 +29,7 @@ return new class extends Migration
             $table->unsignedBigInteger('updated_by')->nullable(); // Define column without constraint
             $table->timestamps();
             $table->softDeletes();
+            $table->unique(['batch_number', 'product_id', 'brand_id', 'measurement_id', 'unit_price', 'sale_price'],'stock_unique_idx');
         });
     }
 

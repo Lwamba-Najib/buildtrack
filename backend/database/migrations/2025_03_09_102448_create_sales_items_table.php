@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained();
             $table->foreignId('brand_id')->constrained();
             $table->foreignId('measurement_id')->constrained();
+            $table->string('unit_price');
             $table->integer('quantity');
             $table->integer('unit_price');
             $table->integer('total_price');

@@ -95,12 +95,41 @@ export const accessKeys = [
     { key: "salesInvoice",name: "Invoice",category: "Sales",visibility: "public", availability: "private"},
     { key: "salesReceipt",name: "Receipt",category: "Sales",visibility: "public", availability: "private"},
 
-    /* Reports */
-    { key: "accountStatementList", name: "Account Statements", category: "Account Statement Reports", visibility: "public", availability: "private" },
-    { key: "accountStatementListExport", name: "Export Account Statement List", category: "Account Statement Reports", visibility: "public", availability: "private" },
-    { key: "accountStatementListMaskToggle", name: "Mask Toggle Account Statement List", category: "Account Statement Reports", visibility: "public", availability: "private" },
-    { key: "accountStatementShowExport", name: "Export Account Statement Details", category: "Account Statement Reports", visibility: "public", availability: "private" },
-    { key: "accountStatementShowMaskToggle", name: "Mask Toggle Account Statement Details", category: "Account Statement Reports", visibility: "public", availability: "private" },
+    /* Reports Sales */
+    { key: "reportDailySalesList", name: "Daily Sales List", category: "Sales Reports", visibility: "public", availability: "private" },
+    { key: "reportDailySalesListExport", name: "Export Daily Sales List", category: "Sales Reports", visibility: "public", availability: "private" },
+    { key: "reportWeeklySalesList", name: "Weekly Sales List", category: "Sales Reports", visibility: "public", availability: "private" },
+    { key: "reportWeeklySalesListExport", name: "Export Weekly Sales List", category: "Sales Reports", visibility: "public", availability: "private" },
+    { key: "reportMonthlySalesList", name: "Monthly Sales List", category: "Sales Reports", visibility: "public", availability: "private" },
+    { key: "reportMonthlySalesListExport", name: "Export Monthly Sales List", category: "Sales Reports", visibility: "public", availability: "private" },
+    { key: "reportInterimSalesList", name: "Interim Sales List", category: "Sales Reports", visibility: "public", availability: "private" },
+    { key: "reportInterimSalesListExport", name: "Export Interim Sales List", category: "Sales Reports", visibility: "public", availability: "private" },
+    { key: "reportTopSalesList", name: "Top Sales List", category: "Sales Reports", visibility: "public", availability: "private" },
+    { key: "reportTopSalesListExport", name: "Export Top Sales List", category: "Sales Reports", visibility: "public", availability: "private" },
+
+    /* Reports Financial */
+    { key: "reportRevenueList", name: "Revenue List", category: "Financial Reports", visibility: "public", availability: "private" },
+    { key: "reportRevenueListExport", name: "Export Revenue List", category: "Financial Reports", visibility: "public", availability: "private" },
+    { key: "reportProfitLossList", name: "Profit & Loss List", category: "Financial Reports", visibility: "public", availability: "private" },
+    { key: "reportProfitLossListExport", name: "Export Profit & Loss List", category: "Financial Reports", visibility: "public", availability: "private" },
+    { key: "reportExpenseList", name: "Expense List", category: "Financial Reports", visibility: "public", availability: "private" },
+    { key: "reportExpenseListExport", name: "Export Expense List", category: "Financial Reports", visibility: "public", availability: "private" },
+    { key: "reportSupplierList", name: "Supplier List", category: "Financial Reports", visibility: "public", availability: "private" },
+    { key: "reportSupplierListExport", name: "Export Supplier List", category: "Financial Reports", visibility: "public", availability: "private" },
+    { key: "reportTaxList", name: "Tax List", category: "Financial Reports", visibility: "public", availability: "private" },
+    { key: "reportTaxListExport", name: "Export Tax List", category: "Financial Reports", visibility: "public", availability: "private" },
+
+    /* Reports Inventory */
+    { key: "reportStockList", name: "Stock List", category: "Inventory Reports", visibility: "public", availability: "private" },
+    { key: "reportStockListExport", name: "Export Stock List", category: "Inventory Reports", visibility: "public", availability: "private" },
+    { key: "reportStockBalanceList", name: "Stock Balance List", category: "Inventory Reports", visibility: "public", availability: "private" },
+    { key: "reportStockBalanceListExport", name: "Export Stock Balance List", category: "Inventory Reports", visibility: "public", availability: "private" },
+    { key: "reportLowStockAlertList", name: "Low Stock Alert List", category: "Inventory Reports", visibility: "public", availability: "private" },
+    { key: "reportLowStockAlertListExport", name: "Export Low Stock Alert List", category: "Inventory Reports", visibility: "public", availability: "private" },
+    { key: "reportStockValuationList", name: "Stock Valuation List", category: "Inventory Reports", visibility: "public", availability: "private" },
+    { key: "reportStockValuationListExport", name: "Export Stock Valuation List", category: "Inventory Reports", visibility: "public", availability: "private" },
+    { key: "reportStockAgingList", name: "Stock Aging List", category: "Inventory Reports", visibility: "public", availability: "private" },
+    { key: "reportStockAgingListExport", name: "Export Stock Aging List", category: "Inventory Reports", visibility: "public", availability: "private" },
 
     // Manage Settings
     { key: "settings", name: "Settings", category: "Settings", visibility: "private", availability: "private" },
@@ -108,7 +137,6 @@ export const accessKeys = [
     { key: "appearanceSettings",name: "Appearance Settings",category: "Settings",visibility: "public", availability: "private" },
     { key: "emailSettings",name: "Email Settings",category: "Settings",visibility: "public", availability: "private" },
     { key: "securitySettings",name: "Security Settings",category: "Settings",visibility: "public", availability: "private" },
-
 
     // Audit Logs
     { key: "applicationLogs", name: "Application Logs", category: "Audit Logs", visibility: "public", availability: "private" },

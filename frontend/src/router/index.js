@@ -27,7 +27,6 @@ import UserList from "@/views/whenin/users/List.vue";
 import UserCreate from "@/views/whenin/users/Create.vue";
 import UserShow from "@/views/whenin/users/Show.vue";
 import UserUpdate from "@/views/whenin/users/Update.vue";
-
 /* Manage Products */
 // Categories
 import CategoryList from "@/views/whenin/products/categories/List.vue";
@@ -60,11 +59,24 @@ import SalesPOS from "@/views/whenin/sales/pos/POS.vue";
 import SalesList from "@/views/whenin/sales/sales/List.vue";
 import SalesReceipt from "@/views/whenin/sales/sales/Receipt.vue";
 import SalesInvoice from "@/views/whenin/sales/sales/Invoice.vue";
-
-// Account Statement
-import AccountStatementList from "@/views/whenin/reports/accountstatement/List.vue";
-import AccountStatementShow from "@/views/whenin/reports/accountstatement/Show.vue";
-
+// Report Sales
+import ReportDailySalesList from "@/views/whenin/reports/sales/daily/List.vue";
+import ReportWeeklySalesList from "@/views/whenin/reports/sales/weekly/List.vue";
+import ReportMonthlySalesList from "@/views/whenin/reports/sales/monthly/List.vue";
+import ReportInterimSalesList from "@/views/whenin/reports/sales/interim/List.vue";
+import ReportTopSalesList from "@/views/whenin/reports/sales/top/List.vue";
+// Report Financial
+import ReportRevenueList from "@/views/whenin/reports/financial/revenue/List.vue";
+import ReportProfitLossList from "@/views/whenin/reports/financial/profitloss/List.vue";
+import ReportExpenseList from "@/views/whenin/reports/financial/expense/List.vue";
+import ReportSupplierList from "@/views/whenin/reports/financial/supplier/List.vue";
+import ReportTaxList from "@/views/whenin/reports/financial/tax/List.vue";
+// Report Inventory
+import ReportStockList from "@/views/whenin/reports/inventory/stock/List.vue";
+import ReportStockBalanceList from "@/views/whenin/reports/inventory/stockbalance/List.vue";
+import ReportLowStockAlertList from "@/views/whenin/reports/inventory/lowstockalert/List.vue";
+import ReportStockValuationList from "@/views/whenin/reports/inventory/stockvaluation/List.vue";
+import ReportStockAgingList from "@/views/whenin/reports/inventory/stockaging/List.vue";
 // Trash
 import Trash from "@/views/whenin/singles/Trash.vue";
 // Audit Logs
@@ -324,19 +336,97 @@ const router = createRouter({
                     meta: { public: false },
                 },
                 {
-                    path: "accountstatementlist",
-                    name: "AccountStatementList",
-                    component: AccountStatementList,
+                    path: "reportdailysaleslist",
+                    name: "ReportDailySalesList",
+                    component: ReportDailySalesList,
                     meta: { public: false },
                 },
                 {
-                    path: "accountstatementshow/:id",
-                    name: "AccountStatementShow",
-                    component: AccountStatementShow,
+                    path: "reportweeklysaleslist",
+                    name: "ReportWeeklySalesList",
+                    component: ReportWeeklySalesList,
                     meta: { public: false },
                 },
                 {
-                    path: "businessInfosettings",
+                    path: "reportmonthlysaleslist",
+                    name: "ReportMonthlySalesList",
+                    component: ReportMonthlySalesList,
+                    meta: { public: false },
+                },
+                {
+                    path: "reportinterimsaleslist",
+                    name: "ReportInterimSalesList",
+                    component: ReportInterimSalesList,
+                    meta: { public: false },
+                },
+                {
+                    path: "reporttopsaleslist",
+                    name: "ReportTopSalesList",
+                    component: ReportTopSalesList,
+                    meta: { public: false },
+                },
+                {
+                    path: "reportrevenuelist",
+                    name: "ReportRevenueList",
+                    component: ReportRevenueList,
+                    meta: { public: false },
+                },
+                {
+                    path: "reportprofitlosslist",
+                    name: "ReportProfitLossList",
+                    component: ReportProfitLossList,
+                    meta: { public: false },
+                },
+                {
+                    path: "reportexpenselist",
+                    name: "ReportExpenseList",
+                    component: ReportExpenseList,
+                    meta: { public: false },
+                },
+                {
+                    path: "reportsupplierlist",
+                    name: "ReportSupplierList",
+                    component: ReportSupplierList,
+                    meta: { public: false },
+                },
+                {
+                    path: "reporttaxlist",
+                    name: "ReportTaxList",
+                    component: ReportTaxList,
+                    meta: { public: false },
+                },
+                {
+                    path: "reportstocklist",
+                    name: "ReportStockList",
+                    component: ReportStockList,
+                    meta: { public: false },
+                },
+                {
+                    path: "reportstockbalancelist",
+                    name: "ReportStockBalanceList",
+                    component: ReportStockBalanceList,
+                    meta: { public: false },
+                },
+                {
+                    path: "reportlowstockalertlist",
+                    name: "ReportLowStockAlertList",
+                    component: ReportLowStockAlertList,
+                    meta: { public: false },
+                },
+                {
+                    path: "reportstockvaluationlist",
+                    name: "ReportStockValuationList",
+                    component: ReportStockValuationList,
+                    meta: { public: false },
+                },
+                {
+                    path: "reportstockaginglist",
+                    name: "ReportStockAgingList",
+                    component: ReportStockAgingList,
+                    meta: { public: false },
+                },
+                {
+                    path: "businessinfosettings",
                     name: "BusinessInfoSettings",
                     component: BusinessInfoSettings,
                     meta: { public: false },

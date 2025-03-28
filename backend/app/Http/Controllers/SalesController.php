@@ -262,6 +262,7 @@ class SalesController extends Controller
                     'product_id' => $item['product']['id'],
                     'brand_id' => $item['brand']['id'],
                     'measurement_id' => $item['measurement']['id'],
+                    'batch_number' => $item['batchNumber']['batch_number'],
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['salePrice'],
                     'total_price' => $item['quantity'] * $item['salePrice'],

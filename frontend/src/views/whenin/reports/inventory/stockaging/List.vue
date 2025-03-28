@@ -1,15 +1,19 @@
 <script setup>
-import { onMounted, ref, reactive, watch} from "vue";
+import { onMounted, ref, reactive, watch, nextTick } from "vue";
 import { RouterLink } from "vue-router";
 import { useStore } from 'vuex';
 import { useCustomUtils } from "@/utils/customUtils";
 import { PaginationSizes, PaginationSizeOptions } from "@/enums/paginationSizes";
 import axios from "@/axios";
-import LoadingIndicator from "../../singles/SpinnerGrow.vue";
+import LoadingIndicator from "../../../singles/SpinnerGrow.vue";
 import { useMenuAccess } from "@/permissions"; // Adjust the path as needed
 // Use the menu access composable
 const { menuAccess } = useMenuAccess();
 const {
+	showFilterForms,
+	toggleFilterForms,
+	hideFilterForms,
+	parseDate,
 } = useCustomUtils();
 // Access Vuex store
 const store = useStore();
@@ -20,6 +24,8 @@ const stocks = ref([]);
 const pagination = ref({ currentPage: 1, lastPage: 1, total: 0 });
 const paginationSize = ref(PaginationSizes.SMALL);
 const paginationSizeOptions = PaginationSizeOptions;
+const filterStartDate = ref(""); // Bind the start date
+const filterEndDate = ref(""); // Bind the end date
 const alerts = reactive({
 	success: "",
 	error: "",
@@ -36,14 +42,101 @@ const handleError = (error, alertField = "error") => {
 	alerts[alertField] = error.response?.data?.message || "An error occurred. Please try again later.";
 	console.error("API Error:", error);
 };
+// Function to delete a stock with confirmation
+const deleteStock = async (stockId) => {
+	const confirmed = window.confirm("Are you sure you want to delete this stock?");
+	if (confirmed) {
+		alerts.success = "";
+		alerts.error = "";
+		isLoading.value = true; // Start loading
+		try {
+			// Retrieve the token from local storage
+			const token = getToken();
 
-const fetchStockLevels = async (page = 1) => {
+			// Make delete request to backend
+			const response = await axios.delete(`/stockdelete/${stockId}`, {
+				headers: {
+					Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+				},
+			});
+
+			if (response.data.success) {
+				// Refresh stocks list after deletion
+				fetchStocks();
+				alerts.success = "stock deleted successfully!";
+			}
+		} catch (error) {
+			handleError(error); // Handle error using centralized error handle
+		} finally {
+			isLoading.value = false; // Stop loading
+		}
+	}
+};
+// Track selected stocks for mass delete
+const selectedStocks = ref([]);
+
+// Toggle stock selection
+const toggleStockSelection = (stockId) => {
+	if (selectedStocks.value.includes(stockId)) {
+		selectedStocks.value = selectedStocks.value.filter((id) => id !== stockId);
+	} else {
+		selectedStocks.value.push(stockId);
+	}
+};
+
+// Toggle all stocks selection
+const toggleAllSingleStocks = (event) => {
+	if (event.target.checked) {
+		selectedStocks.value = stocks.value.map((stock) => stock.id);
+	} else {
+		selectedStocks.value = [];
+	}
+};
+
+// Mass delete function
+const deleteSelectedStocks = async () => {
+	const confirmed = window.confirm(
+		`Are you sure you want to delete ${selectedStocks.value.length} stock(s)?`
+	);
+	if (confirmed && selectedStocks.value.length > 0) {
+		alerts.success = "";
+		alerts.error = "";
+		isLoading.value = true; // Start loading
+
+		try {
+			const token = getToken();
+
+			// Updated API URL and request body key
+			const response = await axios.delete(`/stocksdelete`, {
+				headers: {
+					Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+				},
+				data: {
+					ids: selectedStocks.value, // Update to match Laravel's expected key 'ids'
+				},
+			});
+
+			if (response.data.success) {
+				// Refresh stocks list after deletion
+				fetchStocks();
+				alerts.success = `${selectedStocks.value.length} stock(s) deleted successfully!`;
+				selectedStocks.value = []; // Clear selected stocks after deletion
+			}
+		} catch (error) {
+			handleError(error); // Handle error using centralized error handle
+		} finally {
+			isLoading.value = false; // Stop loading
+		}
+	}
+};
+
+const fetchStocks = async (page = 1) => {
     isLoading.value = true; // Start loading
     try {
         // Retrieve the token from local storage
         const token = getToken();
 
-        const response = await axios.get("/stocklevel", {
+        const response = await axios.get("/stocklist", {
             headers: {
                 Authorization: `Bearer ${token}`, // Include the token in the Authorization header
             },
@@ -51,6 +144,8 @@ const fetchStockLevels = async (page = 1) => {
                 pagination_size: paginationSize.value,
                 page: page,
                 search: searchQuery.value,
+                startDate: filterStartDate.value,
+                endDate: filterEndDate.value,
             },
         });
 
@@ -65,7 +160,7 @@ const fetchStockLevels = async (page = 1) => {
                 total: response.data.total,              // Access total from the root level
             };
         } else {
-            console.error("Error fetching stock level logs:", response.statusText);
+            console.error("Error fetching stock logs:", response.statusText);
         }
     } catch (error) {
         handleError(error); // Handle error using centralized error handle
@@ -79,8 +174,8 @@ const exportFile = async (fileType) => {
 
 	// Define URL endpoints for different file types
 	const urls = {
-		xlsx: "/stocklevelxlsx",
-		csv: "/stocklevelcsv",
+		xlsx: "/stockxlsx",
+		csv: "/stockcsv",
 	};
 
 	try {
@@ -129,44 +224,85 @@ const exportCsv = () => exportFile("csv");
 // Initial data fetch
 onMounted(() => {
 	new Podtable("#table", {
-		keepCell: [6],
+		keepCell: [9],
 	});
-	fetchStockLevels();
+	fetchStocks();
 });
 
 // Search function
 const search = () => {
 	searchExecuted.value = true;
-	fetchStockLevels();
+	fetchStocks();
 };
 
 // Clear search and reset
 const clearSearch = () => {
 	searchQuery.value = "";
 	searchExecuted.value = false;
-	fetchStockLevels();
+	fetchStocks();
+};
+
+// Reset filters and hide filter forms
+const resetFiltersAndHide = () => {
+	filterStartDate.value = "";
+	filterEndDate.value = "";
+	$(".datepicker-start").val(filterStartDate.value);
+	$(".datepicker-end").val(filterStartDate.value);
+	hideFilterForms();
+	fetchStocks(); // Refetch data without filters
+};
+
+// Apply filters
+const applyFilters = () => {
+	fetchStocks();
 };
 
 // Handle pagination button click
 const handlePaginationClick = (page) => {
 	if (page > 0 && page <= pagination.value.lastPage) {
-		fetchStockLevels(page);
+		fetchStocks(page);
 	}
 };
 
 // Watch for pagination size changes and refetch data
 watch(paginationSize, () => {
-	fetchStockLevels();
+	fetchStocks();
 });
-// Method to determine stock status
-const getStockStatus = (balance, minStockLevel) => {
-    if (balance <= 0) {
-        return { text: "Out of Stock", class: "badge bg-danger" };
-    } else if (balance <= minStockLevel) {
-        return { text: "Low Stock", class: "badge bg-warning" };
-    } else {
-        return { text: "In Stock", class: "badge bg-success" };
-    }
+
+// Initialize Date Pickers with parseDate function for date formatting
+const initializeDatePickers = () => {
+	// Start Date Picker without pre-filling
+	$(".datepicker-start").daterangepicker(
+		{
+			singleDatePicker: true,
+			autoUpdateInput: false, // Prevents auto-filling with a date
+			locale: { format: "YYYY-MM-DD" },
+		},
+		function (start) {
+			filterStartDate.value = parseDate(start.format("YYYY-MM-DD"));
+			$(".datepicker-start").val(filterStartDate.value); // Updates input field on selection
+		}
+	);
+
+	// End Date Picker without pre-filling
+	$(".datepicker-end").daterangepicker(
+		{
+			singleDatePicker: true,
+			autoUpdateInput: false, // Prevents auto-filling with a date
+			locale: { format: "YYYY-MM-DD" },
+		},
+		function (end) {
+			filterEndDate.value = parseDate(end.format("YYYY-MM-DD"));
+			$(".datepicker-end").val(filterEndDate.value); // Updates input field on selection
+		}
+	);
+};
+// Modify the toggle function to include initializeSelect2 as a callback
+const handleToggleFilterForms = () => {
+	toggleFilterForms(async () => {
+		await nextTick(); // Wait for DOM update
+		initializeDatePickers();
+	});
 };
 </script>
 
@@ -181,11 +317,11 @@ const getStockStatus = (balance, minStockLevel) => {
 					<RouterLink to="/home" class="text-decoration-none">Home</RouterLink>
 				</li>
 				<li class="breadcrumb-item">
-					<RouterLink to="/stocklevel" class="text-decoration-none"
-						>Stock Levels</RouterLink
+					<RouterLink to="/stocklist" class="text-decoration-none"
+						>Stock</RouterLink
 					>
 				</li>
-				<li class="breadcrumb-item text-secondary" aria-current="page">Level</li>
+				<li class="breadcrumb-item text-secondary" aria-current="page">List</li>
 			</ol>
 			<!-- Breadcrumb end -->
 		</div>
@@ -197,7 +333,10 @@ const getStockStatus = (balance, minStockLevel) => {
 			<div
 				class="row"
 				v-if="
-					menuAccess.stockLevelExport
+					menuAccess.stockAdd ||
+					menuAccess.stockBulkDelete ||
+					menuAccess.stockFilter ||
+					menuAccess.stockExport
 				"
 			>
 				<div class="col-xxl-12">
@@ -205,7 +344,22 @@ const getStockStatus = (balance, minStockLevel) => {
 						<div class="card-body p-2">
 							<div class="d-flex justify-content-end my-1 my-lg-0">
 								<div class="d-flex flex-row gap-2">
-									<div class="d-flex" v-if="menuAccess.stockLevelExport">
+									<RouterLink
+										v-if="menuAccess.stockAdd"
+										to="/stockcreate"
+										class="btn btn-sm btn-primary"
+										><i class="fa fa-plus"></i>
+										Create
+									</RouterLink>
+									<!-- Updated Filter button to toggle visibility of filter forms -->
+									<button
+										class="btn btn-sm btn-info"
+										v-if="menuAccess.stockFilter"
+										@click="handleToggleFilterForms"
+									>
+										<i class="fa fa-sliders"></i> Filter
+									</button>
+									<div class="d-flex" v-if="menuAccess.stockExport">
 										<div class="dropdown">
 											<button
 												type="button"
@@ -239,7 +393,89 @@ const getStockStatus = (balance, minStockLevel) => {
 											</ul>
 										</div>
 									</div>
+									<!-- Mass Delete Button -->
+									<button
+										v-if="
+											menuAccess.stockBulkDelete &&
+											selectedStocks.length > 0
+										"
+										class="btn btn-danger btn-sm"
+										@click="deleteSelectedStocks"
+									>
+										<i class="fa fa-trash"></i> Delete
+									</button>
 								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- Row end -->
+			<!-- Row start -->
+			<div v-if="showFilterForms" class="row">
+				<div class="col-xxl-12">
+					<div class="card mb-3">
+						<div class="card-body">
+							<!-- Row start -->
+							<div class="row gx-3">
+								<!-- Startdate filter -->
+								<div class="col-lg-6 col-sm-4 col-12">
+									<div class="mb-3">
+										<label for="filterStartDate" class="form-label"
+											>Start Date</label
+										>
+										<div class="input-group">
+											<input
+												type="text"
+												class="form-control datepicker-start"
+												placeholder="YYYY-MM-DD"
+											/>
+											<span class="input-group-text">
+												<i class="bi bi-calendar4"></i>
+											</span>
+										</div>
+									</div>
+								</div>
+								<!-- Enddate filter -->
+								<div class="col-lg-6 col-sm-4 col-12">
+									<div class="mb-3">
+										<label for="filterEndDate" class="form-label"
+											>End Date</label
+										>
+										<div class="input-group">
+											<input
+												type="text"
+												class="form-control datepicker-end"
+												placeholder="YYYY-MM-DD"
+											/>
+											<span class="input-group-text">
+												<i class="bi bi-calendar4"></i>
+											</span>
+										</div>
+									</div>
+								</div>
+							</div>
+							<!-- Row end -->
+						</div>
+						<div class="card-footer">
+							<div
+								class="d-flex justify-content-between align-items-center my-2 my-lg-0"
+							>
+								<!-- Cancel and Submit buttons -->
+								<button
+									type="button"
+									class="btn btn-sm btn-danger"
+									@click="resetFiltersAndHide"
+								>
+									<i class="fa fa-times"></i> Cancel
+								</button>
+								<button
+									type="button"
+									class="btn btn-sm btn-success"
+									@click="applyFilters"
+								>
+									<i class="fa fa-send"></i> Submit
+								</button>
 							</div>
 						</div>
 					</div>
@@ -260,7 +496,7 @@ const getStockStatus = (balance, minStockLevel) => {
 										name="paginationSize"
 										class="form-select form-select-sm"
 										v-model="paginationSize"
-										@change="fetchStockLevels"
+										@change="fetchStocks"
 									>
 										<option
 											v-for="size in paginationSizeOptions"
@@ -339,35 +575,123 @@ const getStockStatus = (balance, minStockLevel) => {
 								>
 									<thead>
 										<tr>
+											<th scope="col">
+												<!-- Header checkbox to select/unselect all -->
+												<input
+													type="checkbox"
+													@change="toggleAllSingleStocks($event)"
+												/>
+											</th>
 											<th scope="col">#</th>
 											<th scope="col">PRODUCT</th>
 											<th scope="col">BRAND</th>
-											<th scope="col">UNIT OF MEASUREMENT</th>
-											<th scope="col">QTY IN SOCK</th>
-											<th scope="col">QTY IN SOLD</th>
-											<th scope="col">STATUS</th>
+											<th scope="col">UNIT</th>
+											<th scope="col">QTY</th>
+											<th scope="col">UNIT PRICE</th>
+											<th scope="col">TOTAL</th>
+											<th scope="col">SALE PRICE</th>
+											<th scope="col">SUPPLIER</th>
+											<th scope="col">CREATED BY</th>
+											<th scope="col">DATE</th>
+											<th scope="col">ACTIONS</th>
 											<th scope="col" class="control-column"></th>
 										</tr>
 									</thead>
 									<tbody>
 										<tr v-for="(log, index) in stocks" :key="index">
+											<td>
+												<input
+													type="checkbox"
+													:value="log.id"
+													@change="toggleStockSelection(log.id)"
+													:checked="selectedStocks.includes(log.id)"
+												/>
+											</td>
 											<th scope="row">
 												{{ (pagination.currentPage - 1) * paginationSize + index + 1 }}
 											</th>
 											<td>{{ log.product.name || "N/A" }}</td>
 											<td>{{ log.brand.name || "N/A" }}</td>
 											<td>{{ log.measurement.name || "N/A" }}</td>
-											<td>{{ Number(log.balance).toLocaleString() || 0 }}</td>
-											<td>{{ Number(log.total_sold).toLocaleString() || 0 }}</td>
+											<td>{{ log.quantity || 0 }}</td>
+											<td>{{ Number(log.unit_price).toLocaleString() || 0 }}</td>
+											<td>{{ Number(log.total_cost).toLocaleString() || 0 }}</td>
+											<td>{{ Number(log.sale_price).toLocaleString() || 0 }}</td>
+											<td>{{ log.supplier.name || "N/A" }}</td>
+											<td>{{ log.created_by ? log.created_by.name : "N/A" }}</td>
+											<td>{{ parseDate(log.stock_date) || "N/A" }}</td>
 											<td>
-												<span :class="getStockStatus(log.balance, log.min_stock_level).class" class="badge">
-													{{ getStockStatus(log.balance, log.min_stock_level).text }}
-												</span>
+												<div class="d-flex">
+													<div class="dropdown">
+														<button
+															type="button"
+															class="btn btn-success btn-sm dropdown-toggle"
+															data-bs-toggle="dropdown"
+														>
+															Actions
+														</button>
+														<ul
+															class="dropdown-menu dropdown-menu-end"
+															style="right: 0; left: auto"
+														>
+															<li>
+																<RouterLink
+																	class="dropdown-item"
+																	:to="{
+																		name: 'StockShow',
+																		params: {
+																			id: log.id,
+																		},
+																	}"
+																	>View
+																</RouterLink>
+															</li>
+															<div
+																v-if="
+																	menuAccess.stockEdit
+																"
+																class="dropdown-divider"
+															></div>
+															<li
+																v-if="menuAccess.stockEdit"
+															>
+																<RouterLink
+																	class="dropdown-item"
+																	:to="{
+																		name:
+																			'StockUpdate',
+																		params: {
+																			id: log.id,
+																		},
+																	}"
+																>
+																	Edit</RouterLink
+																>
+															</li>
+															<div
+																v-if="
+																	menuAccess.stockDelete
+																"
+																class="dropdown-divider"
+															></div>
+															<li
+																v-if="menuAccess.stockDelete"
+															>
+																<a
+																	class="dropdown-item"
+																	href="#"
+																	@click.prevent="deleteStock(log.id)"
+																	>Delete</a
+																>
+															</li>
+														</ul>
+													</div>
+												</div>
 											</td>
 											<td class="control-column"></td>
 										</tr>
 										<tr v-if="stocks.length === 0">
-											<th colspan="7" class="text-center">
+											<th colspan="13" class="text-center">
 												No records found.
 											</th>
 										</tr>

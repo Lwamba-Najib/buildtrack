@@ -1,117 +1,100 @@
 <script setup>
-import { onMounted, ref, reactive, watch } from "vue";
+import { onMounted, ref, reactive, watch, nextTick } from "vue";
 import { RouterLink } from "vue-router";
+import { useStore } from 'vuex';
 import { useCustomUtils } from "@/utils/customUtils";
 import { PaginationSizes, PaginationSizeOptions } from "@/enums/paginationSizes";
 import axios from "@/axios";
-import LoadingIndicator from "../../singles/SpinnerGrow.vue";
+import LoadingIndicator from "../../../singles/SpinnerGrow.vue";
 import { useMenuAccess } from "@/permissions"; // Adjust the path as needed
-
 // Use the menu access composable
 const { menuAccess } = useMenuAccess();
-const { } = useCustomUtils();
-
-// Get all the public countries available
-const publicCountries = getPublicCountries();
-
-// Function to get the currency based on the country name
-const getCurrency = (countryName) => {
-    const country = publicCountries.find((c) => c.country === countryName);
-    return country ? country.currency : "Currency Not Found";  // Fallback if country is not found
-};
+const {
+	showFilterForms,
+	toggleFilterForms,
+	hideFilterForms,
+	parseDate,
+} = useCustomUtils();
+// Access Vuex store
+const store = useStore();
 const isLoading = ref(false);
 const searchQuery = ref("");
 const searchExecuted = ref(false);
-const clients = ref([]);
+const sales = ref([]);
 const pagination = ref({ currentPage: 1, lastPage: 1, total: 0 });
 const paginationSize = ref(PaginationSizes.SMALL);
 const paginationSizeOptions = PaginationSizeOptions;
+const filterStartDate = ref(""); // Bind the start date
+const filterEndDate = ref(""); // Bind the end date
 const alerts = reactive({
 	success: "",
 	error: "",
 });
-const isMasked = ref(true);
-
-const toggleMask = () => {
-    isMasked.value = !isMasked.value;
+// Helper function to retrieve token
+const getToken = () => {
+	const token = localStorage.getItem("token");
+	if (!token) throw new Error("No token found");
+	return token;
 };
 
-const maskValue = (value, field) => {
-    if (isMasked.value) {
-        if (field === 'phone') {
-        return 'XXX-XXX-XXXX'; // Custom mask for phone
+// Centralized error handling function
+const handleError = (error, alertField = "error") => {
+	alerts[alertField] = error.response?.data?.message || "An error occurred. Please try again later.";
+	console.error("API Error:", error);
+};
+
+
+const fetchSales = async (page = 1) => {
+    isLoading.value = true; // Start loading
+    try {
+        // Retrieve the token from local storage
+        const token = getToken();
+
+        const response = await axios.get("/saleslist", {
+            headers: {
+                Authorization: `Bearer ${token}`, // Include the token in the Authorization header
+            },
+            params: {
+                pagination_size: paginationSize.value,
+                page: page,
+                search: searchQuery.value,
+                startDate: filterStartDate.value,
+                endDate: filterEndDate.value,
+            },
+        });
+
+        if (response.status === 200) {
+            // Assign the data to sales
+            sales.value = response.data.data;
+
+            // Update the pagination object
+            pagination.value = {
+                currentPage: response.data.current_page, // Access current_page from the root level
+                lastPage: response.data.last_page,       // Access last_page from the root level
+                total: response.data.total,              // Access total from the root level
+            };
+        } else {
+            console.error("Error fetching sale logs:", response.statusText);
         }
-        return 'XXXXX'; // Default mask for other fields
+    } catch (error) {
+        handleError(error); // Handle error using centralized error handle
+    } finally {
+        isLoading.value = false; // Stop loading
     }
-    return value || 'N/A';
 };
-
-const fetchClients = async (page = 1) => {
-	isLoading.value = true; // Start loading
-	try {
-		// Retrieve the token from local storage
-		const token = localStorage.getItem("token");
-
-		// Make sure the token exists before making the request
-		if (!token) {
-			throw new Error("No token found");
-		}
-		const response = await axios.get("/transferreportclientlist", {
-			headers: {
-				Authorization: `Bearer ${token}`, // Include the token in the Authorization header
-			},
-			params: {
-				pagination_size: paginationSize.value,
-				page: page,
-				search: searchQuery.value,
-			},
-		});
-
-		if (response.status === 200) {
-			// Assuming the response structure looks like:
-			// response.data.data is an array of clients
-			// response.data.current_page, response.data.last_page, response.data.total are for pagination
-			clients.value = response.data.data.map(client => ({
-				// Map the client data correctly, no need to wrap in 'client' object
-				client_number: client.client_number || 'N/A',
-				business_name: client.business_name || 'N/A',
-				total_debit: client.total_debit || 0,
-				country: client.country || 'Unknown', // Add default value if country is missing
-				id: client.id || null, // Make sure `id` is available for action links
-			}));
-
-			// Update pagination
-			pagination.value = {
-				currentPage: response.data.current_page,
-				lastPage: response.data.last_page,
-				total: response.data.total,
-			};
-		} else {
-			console.error("Error fetching client logs:", response.statusText);
-			alerts.error = `Error: ${response.statusText}`;
-		}
-	} catch (error) {
-		console.error("Error fetching client logs:", error);
-		alerts.error = `Error fetching client logs: ${error.message}`;
-	} finally {
-		isLoading.value = false; // Stop loading
-	}
-};
-
 const exportFile = async (fileType) => {
 	// Set loading state to true while the file is being prepared
 	isLoading.value = true;
 
 	// Define URL endpoints for different file types
 	const urls = {
-		xlsx: "/transferreportxlsx",
-		csv: "/transferreportcsv",
+		xlsx: "/salexlsx",
+		csv: "/salecsv",
 	};
 
 	try {
 		// Retrieve the authentication token from local storage
-		const token = localStorage.getItem("token");
-		if (!token) throw new Error("No token found");
+		const token = getToken();
 
 		// Make an HTTP GET request to fetch the file
 		const response = await axios.get(urls[fileType], {
@@ -121,7 +104,7 @@ const exportFile = async (fileType) => {
 
 		// Generate filename with the current date
 		const today = new Date().toISOString().split("T")[0].replace(/-/g, "_"); // Format: yyyy_mm_dd
-		const filename = `${today}_clients.${fileType}`;
+		const filename = `${today}_sales.${fileType}`;
 
 		// Extract filename from Content-Disposition header if available
 		const disposition = response.headers["content-disposition"];
@@ -155,35 +138,86 @@ const exportCsv = () => exportFile("csv");
 // Initial data fetch
 onMounted(() => {
 	new Podtable("#table", {
-		keepCell: [5],
+		keepCell: [9],
 	});
-	fetchClients();
+	fetchSales();
 });
 
 // Search function
 const search = () => {
 	searchExecuted.value = true;
-	fetchClients();
+	fetchSales();
 };
 
 // Clear search and reset
 const clearSearch = () => {
 	searchQuery.value = "";
 	searchExecuted.value = false;
-	fetchClients();
+	fetchSales();
+};
+
+// Reset filters and hide filter forms
+const resetFiltersAndHide = () => {
+	filterStartDate.value = "";
+	filterEndDate.value = "";
+	$(".datepicker-start").val(filterStartDate.value);
+	$(".datepicker-end").val(filterStartDate.value);
+	hideFilterForms();
+	fetchSales(); // Refetch data without filters
+};
+
+// Apply filters
+const applyFilters = () => {
+	fetchSales();
 };
 
 // Handle pagination button click
 const handlePaginationClick = (page) => {
 	if (page > 0 && page <= pagination.value.lastPage) {
-		fetchClients(page);
+		fetchSales(page);
 	}
 };
 
 // Watch for pagination size changes and refetch data
 watch(paginationSize, () => {
-	fetchClients();
+	fetchSales();
 });
+
+// Initialize Date Pickers with parseDate function for date formatting
+const initializeDatePickers = () => {
+	// Start Date Picker without pre-filling
+	$(".datepicker-start").daterangepicker(
+		{
+			singleDatePicker: true,
+			autoUpdateInput: false, // Prevents auto-filling with a date
+			locale: { format: "YYYY-MM-DD" },
+		},
+		function (start) {
+			filterStartDate.value = parseDate(start.format("YYYY-MM-DD"));
+			$(".datepicker-start").val(filterStartDate.value); // Updates input field on selection
+		}
+	);
+
+	// End Date Picker without pre-filling
+	$(".datepicker-end").daterangepicker(
+		{
+			singleDatePicker: true,
+			autoUpdateInput: false, // Prevents auto-filling with a date
+			locale: { format: "YYYY-MM-DD" },
+		},
+		function (end) {
+			filterEndDate.value = parseDate(end.format("YYYY-MM-DD"));
+			$(".datepicker-end").val(filterEndDate.value); // Updates input field on selection
+		}
+	);
+};
+// Modify the toggle function to include initializeSelect2 as a callback
+const handleToggleFilterForms = () => {
+	toggleFilterForms(async () => {
+		await nextTick(); // Wait for DOM update
+		initializeDatePickers();
+	});
+};
 </script>
 
 <template>
@@ -197,8 +231,8 @@ watch(paginationSize, () => {
 					<RouterLink to="/home" class="text-decoration-none">Home</RouterLink>
 				</li>
 				<li class="breadcrumb-item">
-					<RouterLink to="/transferreportlist" class="text-decoration-none"
-						>Bulk & Single Transfers Reports</RouterLink
+					<RouterLink to="/saleslist" class="text-decoration-none"
+						>Sales</RouterLink
 					>
 				</li>
 				<li class="breadcrumb-item text-secondary" aria-current="page">List</li>
@@ -213,8 +247,8 @@ watch(paginationSize, () => {
 			<div
 				class="row"
 				v-if="
-					menuAccess.transferReportListExport ||
-					menuAccess.transferReportListMaskToggle
+					menuAccess.salesFilter ||
+					menuAccess.salesExport
 				"
 			>
 				<div class="col-xxl-12">
@@ -222,11 +256,15 @@ watch(paginationSize, () => {
 						<div class="card-body p-2">
 							<div class="d-flex justify-content-end my-1 my-lg-0">
 								<div class="d-flex flex-row gap-2">
-									<button v-if="menuAccess.transferReportListMaskToggle" @click="toggleMask" class="btn btn-sm btn-info d-flex align-items-center gap-2">
-                                    <i :class="isMasked ? 'bi-eye-slash' : 'bi-eye'"></i>
-                                    {{ isMasked ? "Unmask" : "Mask" }}
-                                    </button>
-									<div class="d-flex" v-if="menuAccess.transferReportListExport">
+									<!-- Updated Filter button to toggle visibility of filter forms -->
+									<button
+										class="btn btn-sm btn-info"
+										v-if="menuAccess.salesFilter"
+										@click="handleToggleFilterForms"
+									>
+										<i class="fa fa-sliders"></i> Filter
+									</button>
+									<div class="d-flex" v-if="menuAccess.salesExport">
 										<div class="dropdown">
 											<button
 												type="button"
@@ -268,6 +306,77 @@ watch(paginationSize, () => {
 			</div>
 			<!-- Row end -->
 			<!-- Row start -->
+			<div v-if="showFilterForms" class="row">
+				<div class="col-xxl-12">
+					<div class="card mb-3">
+						<div class="card-body">
+							<!-- Row start -->
+							<div class="row gx-3">
+								<!-- Startdate filter -->
+								<div class="col-lg-6 col-sm-4 col-12">
+									<div class="mb-3">
+										<label for="filterStartDate" class="form-label"
+											>Start Date</label
+										>
+										<div class="input-group">
+											<input
+												type="text"
+												class="form-control datepicker-start"
+												placeholder="YYYY-MM-DD"
+											/>
+											<span class="input-group-text">
+												<i class="bi bi-calendar4"></i>
+											</span>
+										</div>
+									</div>
+								</div>
+								<!-- Enddate filter -->
+								<div class="col-lg-6 col-sm-4 col-12">
+									<div class="mb-3">
+										<label for="filterEndDate" class="form-label"
+											>End Date</label
+										>
+										<div class="input-group">
+											<input
+												type="text"
+												class="form-control datepicker-end"
+												placeholder="YYYY-MM-DD"
+											/>
+											<span class="input-group-text">
+												<i class="bi bi-calendar4"></i>
+											</span>
+										</div>
+									</div>
+								</div>
+							</div>
+							<!-- Row end -->
+						</div>
+						<div class="card-footer">
+							<div
+								class="d-flex justify-content-between align-items-center my-2 my-lg-0"
+							>
+								<!-- Cancel and Submit buttons -->
+								<button
+									type="button"
+									class="btn btn-sm btn-danger"
+									@click="resetFiltersAndHide"
+								>
+									<i class="fa fa-times"></i> Cancel
+								</button>
+								<button
+									type="button"
+									class="btn btn-sm btn-success"
+									@click="applyFilters"
+								>
+									<i class="fa fa-send"></i> Submit
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- Row end -->
+			<!-- Row start -->
 			<div class="row gx-3">
 				<div class="col-xxl-12">
 					<div class="card mb-3">
@@ -281,7 +390,7 @@ watch(paginationSize, () => {
 										name="paginationSize"
 										class="form-select form-select-sm"
 										v-model="paginationSize"
-										@change="fetchClients"
+										@change="fetchSales"
 									>
 										<option
 											v-for="size in paginationSizeOptions"
@@ -361,28 +470,34 @@ watch(paginationSize, () => {
 									<thead>
 										<tr>
 											<th scope="col">#</th>
-											<th scope="col">CLIENT NUMBER/ID.</th>
-											<th scope="col">BUSINESS NAME</th>
-											<th scope="col">TOTAL DEBIT</th>
-											<th scope="col">CURRENCY</th>
+											<th scope="col">BATCH NUMBER</th>
+											<th scope="col">CUSTOMER NAME</th>
+											<th scope="col">PHONE NUMBER</th>
+											<th scope="col">DISCOUNT</th>
+											<th scope="col">TOTAL AMOUNT</th>
+											<th scope="col">PAYMENT METHOD</th>
+											<th scope="col">CREATED BY</th>
+											<th scope="col">DATE</th>
 											<th scope="col">ACTIONS</th>
 											<th scope="col" class="control-column"></th>
 										</tr>
 									</thead>
 									<tbody>
-										<tr v-for="(log, index) in clients" :key="index">
+										<tr v-for="(log, index) in sales" :key="index">
 											<th scope="row">
-												{{
-													(pagination.currentPage - 1) * paginationSize + index + 1
-												}}
+												{{ (pagination.currentPage - 1) * paginationSize + index + 1 }}
 											</th>
-											<td>{{ log.client_number }}</td>
-											<td>{{ log.business_name }}</td>
-											<td class="text-end">{{ maskValue(Number(log.total_debit || 0).toLocaleString(), 'debit') }}</td>
-											<td>{{ getCurrency(log.country) }}</td>
+											<td>{{ log.batch_number || "N/A" }}</td>
+											<td>{{ log.customer_name || "N/A" }}</td>
+											<td>{{ log.customer_phone || "N/A" }}</td>
+											<td>{{ Number(log.discount).toLocaleString() || 0 }}</td>
+											<td>{{ Number(log.total_amount).toLocaleString() || 0 }}</td>
+											<td>{{ log.payment_method || "N/A" }}</td>
+											<td>{{ log.user ? log.user.name : "N/A" }}</td>
+											<td>{{ parseDate(log.created_at) || "N/A" }}</td>
 											<td>
 												<div class="d-flex">
-													<div class="dropdown">
+													<div class="dropdown" v-if="menuAccess.salesInvoice || menuAccess.salesReceipt">
 														<button
 															type="button"
 															class="btn btn-success btn-sm dropdown-toggle"
@@ -394,26 +509,47 @@ watch(paginationSize, () => {
 															class="dropdown-menu dropdown-menu-end"
 															style="right: 0; left: auto"
 														>
-															<li>
+															<li
+																v-if="menuAccess.salesReceipt"
+															>
 																<RouterLink
 																	class="dropdown-item"
 																	:to="{
-																		name: 'TransferReportShow',
+																		name: 'SalesReceipt',
 																		params: {
 																			id: log.id,
 																		},
 																	}"
-																	>View
+																	>Receipt
+																</RouterLink>
+															</li>
+															<div
+																v-if="menuAccess.salesInvoice"
+																class="dropdown-divider"
+															></div>
+															<li
+																v-if="menuAccess.salesInvoice"
+															>
+																<RouterLink
+																	class="dropdown-item"
+																	:to="{
+																		name: 'SalesInvoice',
+																		params: {
+																			id: log.id,
+																		},
+																	}"
+																	>Invoice
 																</RouterLink>
 															</li>
 														</ul>
 													</div>
+													<button type="button" class="btn btn-secondary btn-sm" disabled="true" v-else>Disabled</button>
 												</div>
 											</td>
 											<td class="control-column"></td>
 										</tr>
-										<tr v-if="clients.length === 0">
-											<th colspan="4" class="text-center">
+										<tr v-if="sales.length === 0">
+											<th colspan="10" class="text-center">
 												No records found.
 											</th>
 										</tr>
@@ -429,7 +565,8 @@ watch(paginationSize, () => {
 											`Showing ${
 												pagination.currentPage > 1 ? (pagination.currentPage - 1) * paginationSize + 1 : 1
 											} to ${Math.min(
-												pagination.currentPage * paginationSize, pagination.total
+												pagination.currentPage * paginationSize,
+												pagination.total
 											)} of ${pagination.total} results`
 										}}
 									</div>
@@ -452,11 +589,7 @@ watch(paginationSize, () => {
 											>
 												<button
 													class="page-link btn-sm"
-													@click="
-														handlePaginationClick(
-															pagination.currentPage - 1
-														)
-													"
+													@click="handlePaginationClick(pagination.currentPage - 1)"
 												>
 													&laquo;
 												</button>
@@ -465,33 +598,21 @@ watch(paginationSize, () => {
 											<!-- Display up to five numbered buttons with an interval of 5 -->
 											<template v-if="pagination.lastPage > 1">
 												<template
-													v-for="pageNumber in Math.min(
-														pagination.lastPage,
-														pagination.currentPage + 4
-													)"
+													v-for="pageNumber in Math.min(pagination.lastPage, pagination.currentPage + 4)"
 												>
 													<li
 														:key="pageNumber"
 														class="page-item"
 														:class="{
 															active:
-																pageNumber ===
-																pagination.currentPage,
+																pageNumber === pagination.currentPage,
 														}"
 														v-if="
-															pageNumber >=
-																pagination.currentPage &&
-															pageNumber <=
-																pagination.currentPage + 3
-														"
+															pageNumber >= pagination.currentPage && pageNumber <= pagination.currentPage + 3"
 													>
 														<button
 															class="page-link btn-sm"
-															@click="
-																handlePaginationClick(
-																	pageNumber
-																)
-															"
+															@click="handlePaginationClick(pageNumber)"
 														>
 															{{ pageNumber }}
 														</button>
@@ -501,36 +622,22 @@ watch(paginationSize, () => {
 
 											<li
 												class="page-item"
-												v-if="
-													pagination.currentPage <
-													pagination.lastPage
-												"
+												v-if="pagination.currentPage < pagination.lastPage"
 											>
 												<button
 													class="page-link btn-sm"
-													@click="
-														handlePaginationClick(
-															pagination.currentPage + 1
-														)
-													"
+													@click="handlePaginationClick(pagination.currentPage + 1)"
 												>
 													&raquo;
 												</button>
 											</li>
 											<li
 												class="page-item"
-												v-if="
-													pagination.currentPage <
-													pagination.lastPage
-												"
+												v-if="pagination.currentPage < pagination.lastPage"
 											>
 												<button
 													class="page-link btn-sm"
-													@click="
-														handlePaginationClick(
-															pagination.lastPage
-														)
-													"
+													@click="handlePaginationClick(pagination.lastPage)"
 												>
 													&raquo;&raquo;
 												</button>
