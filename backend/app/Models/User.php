@@ -38,6 +38,7 @@ class User extends Authenticatable
         'lockout_until',
         'last_login_at',
         'is_locked',
+        'session_id',
         'environment',
         'created_by',
         'updated_by',

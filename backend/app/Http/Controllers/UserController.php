@@ -647,6 +647,9 @@ class UserController extends Controller
             // Update user record
             $user->update([
                 'is_locked' => $newStatus,
+                'failed_attempts' => 0,
+                'lockout_until' => null,
+                'last_failed_attempt' => null,
                 'updated_by' => auth()->id(),
             ]);
 

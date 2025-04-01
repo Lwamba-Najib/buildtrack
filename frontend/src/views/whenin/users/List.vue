@@ -368,21 +368,35 @@ const initializeSelect2 = () => {
 	$(function () {
 		// Apply Select2 to all select elements
 		$(".select")
-			.select2({
-				allowClear: true,
-			})
-			.on("change", function () {
-				const fieldName = $(this).attr("id"); // Get the ID of the select field
-				switch (fieldName) {
-					case "filterGender":
-						filterGender.value = $(this).val(); // Sync selection
-						break;
-					case "filterRole":
-						filterRole.value = $(this).val(); // Sync selection
-						break;
-					// Add more cases for other select elements if needed
+		.select2({
+			allowClear: true,
+		})
+		.on("change", function () {
+			const fieldName = $(this).attr("id"); // Get the ID of the select field
+			switch (fieldName) {
+				case "filterGender":
+					filterGender.value = $(this).val(); // Sync selection
+					break;
+				case "filterRole":
+					filterRole.value = $(this).val(); // Sync selection
+					break;
+				// Add more cases for other select elements if needed
+			}
+		})
+		// Handle the unselecting event to prevent undefined access
+		.on("select2:unselecting", function (e) {
+			//console.log("Clearing select field:", $(this).attr("id"));
+			// Optionally prevent the clearing action (e.preventDefault())
+		})
+        // Autofocus on the search field when dropdown opens
+		.on("select2:open", function () {
+			setTimeout(() => {
+				let searchField = document.querySelector(".select2-container--open .select2-search__field");
+				if (searchField) {
+					searchField.focus();
 				}
-			});
+			}, 50); // Slight delay to ensure input is available
+		});
 	});
 };
 // Modify the toggle function to include initializeSelect2 as a callback
@@ -551,7 +565,7 @@ watch([roles, gender], () => {
 												:key="role.id"
 												:value="role.id"
 											>
-											{{ role.name + ' [' + role.business_name + ']' }}
+											{{ role.name }}
 											</option>
 										</select>
 									</div>

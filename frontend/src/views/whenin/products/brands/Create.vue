@@ -9,14 +9,14 @@ useCustomUtils();
 // Initialize reactive variables for user creation fields, alerts, and loading state
 const products = ref([]);
 const name = ref("");
-const product_id = ref("");
+const product_ids = ref([]); // Change from single product_id to multiple
 const environment = ref("");
 const shouldRedirect = ref(true); // New reactive variable for redirection control
 const alerts = reactive({
 	success: "",
 	error: "",
 	name: "",
-	product_id: "",
+	product_ids: "",
 	environment: "",
 });
 const isLoading = ref(false);
@@ -52,7 +52,7 @@ const handleError = (error, alertField = "error") => {
 const validateForm = () => {
 	// Clear previous validation alerts
 	alerts.name = "";
-	alerts.product_id = "";
+	alerts.product_ids = "";
 	alerts.environment = "";
 
 	let isValid = true;
@@ -63,9 +63,9 @@ const validateForm = () => {
 		isValid = false;
 	}
 
-	// Validate product_id field
-	if (!product_id.value) {
-		alerts.product_id = "Product  is required.";
+	// Validate product_ids field
+	if (!product_ids.value) {
+		alerts.product_ids = "At least one product is required.";
 		isValid = false;
 	}
 
@@ -98,7 +98,7 @@ const handleSubmit = async () => {
 			"/brandstore",
 			{
 				name: name.value,
-				product_id: product_id.value,
+				product_ids: product_ids.value, // Sending multiple product IDs
 				environment: environment.value,
 			},
 			{
@@ -146,44 +146,51 @@ const getProducts = async () => {
 };
 // Initialize Select2 on all select fields
 const initializeSelect2 = () => {
-  	$(function () {
-		// Apply Select2 to all select elements
-		$(".select")
-		.select2({
-			allowClear: true,
-			placeholder: "Select an option", // Placeholder for better UX
-		})
-		.on("change", function () {
-			const fieldName = $(this).attr("id"); // Get the ID of the select field
-			const newValue = $(this).val(); // Get the new value of the field
+    $(function () {
+        // Apply Select2 to all select elements
+        $(".select")
+            .select2({
+                allowClear: true,
+                placeholder: "Select an option",
+            })
+            .on("change", function () {
+                const fieldName = $(this).attr("id");
+                const newValue = $(this).val();
 
-			switch (fieldName) {
-			case "product":
-				product_id.value = newValue || ""; // Use empty string if cleared
-				break;
-			default:
-				console.warn(`Unhandled field: ${fieldName}`);
-			}
+                switch (fieldName) {
+                    case "product":
+                        product_ids.value = newValue || []; // Array for multi-select
+                        break;
+                    default:
+                        console.warn(`Unhandled field: ${fieldName}`);
+                }
 
-			if (!newValue) {
-				//console.log(`${fieldName} was cleared.`);
-			}
-		})
-		// Handle the unselecting event to prevent undefined access
-		.on("select2:unselecting", function (e) {
-			//console.log("Clearing select field:", $(this).attr("id"));
-			// Optionally prevent the clearing action (e.preventDefault())
-		})
-		// Autofocus on the search field when dropdown opens
-		.on("select2:open", function () {
-			setTimeout(() => {
-				let searchField = document.querySelector(".select2-container--open .select2-search__field");
-				if (searchField) {
-					searchField.focus();
-				}
-			}, 50); // Slight delay to ensure input is available
-		});
-	});
+                if (!newValue || newValue.length === 0) {
+                    console.log(`${fieldName} was cleared.`);
+                }
+            })
+            .on("select2:unselecting", function (e) {
+                console.log("Clearing select field:", $(this).attr("id"));
+            })
+            .on("select2:open", function () {
+                setTimeout(() => {
+                    let searchField = document.querySelector(
+                        ".select2-container--open .select2-search__field"
+                    );
+                    if (searchField) {
+                        searchField.focus();
+                    }
+                }, 50);
+            });
+
+        // Special configuration for product multi-select
+        $("#product").select2({
+            allowClear: true,
+            multiple: true,          // Enable multi-select
+            placeholder: "Select products", 
+            closeOnSelect: false      // Keep dropdown open
+        });
+    });
 };
 
 // Initial data fetch
@@ -289,7 +296,7 @@ onMounted(() => {
 										<select
 											v-model="product_id"
 											id="product"
-											class="form-select select"
+											class="form-select select" multiple
 										>
 											<option value="" disabled>Select product</option>
 											<option
@@ -302,10 +309,10 @@ onMounted(() => {
 										</select>
 										<!-- Display validation message for product -->
 										<div
-											v-if="alerts.product_id"
+											v-if="alerts.product_ids"
 											class="text-danger mt-2"
 										>
-											{{ alerts.product_id }}
+											{{ alerts.product_ids }}
 										</div>
 									</div>
 								</div>

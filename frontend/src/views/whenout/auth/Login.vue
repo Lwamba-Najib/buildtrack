@@ -126,7 +126,7 @@ const handleSubmit = async (event) => {
 				if (response.data.data.token) {
 					// Store the token in local storage for session management
 					localStorage.setItem("token", response.data.data.token);
-					console.log("Token stored:", localStorage.getItem("token")); // Log token after storing
+					//console.log("Token stored:", localStorage.getItem("token")); // Log token after storing
 					// Delay calling fetchUserData to ensure the token is fully stored
 					setTimeout(() => {
 						store.commit("WhenIn");

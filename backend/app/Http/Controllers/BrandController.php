@@ -9,6 +9,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\QueryException;
 use Illuminate\Validation\ValidationException;
+use Carbon\Carbon;
 
 class BrandController extends Controller
 {
@@ -45,6 +46,12 @@ class BrandController extends Controller
 
             // Fetch the paginated data
             $brands = $query->orderBy('brands.id', 'DESC')->paginate($paginationSize);
+
+            // Format created_at timestamps
+            $brands->getCollection()->transform(function ($brand) {
+                $brand->formatted_created_at = Carbon::parse($brand->created_at)->format('Y-m-d | h:i:s A');
+                return $brand;
+            });
 
             return response()->json($brands);
         } catch (\Exception $e) {
@@ -87,14 +94,15 @@ class BrandController extends Controller
                     'required',
                     'min:3',
                     'max:255',
-                    Rule::unique('brands')->where('product_id', $request->product_id),
+                    // Remove the unique rule since we'll handle it differently for multiple products
                 ],
-                'product_id' => 'required|exists:products,id',
+                'product_ids' => 'required|array',
+                'product_ids.*' => 'exists:products,id',
                 'environment' => 'required|in:PRODUCTION,TEST,DEVELOPMENT',
                 'created_by' => 'nullable',
             ],
             [
-                'product_id.required' => 'The product  field is required.',
+                'product_ids.required' => 'At least one product is required.',
             ]);
 
             // Sanitize and normalize data
@@ -102,32 +110,63 @@ class BrandController extends Controller
             $validated['environment'] = strtoupper($validated['environment']);
             $validated['created_by'] = auth()->user()->id;
 
-            // Create the new product
-            $newBrand = Brand::create($validated);
+            $createdBrands = [];
+            $errors = [];
 
-            // Extract specific form inputs for logging
-            $inputNew = $request->only(['name', 'product_id', 'environment']);
+            // Check for existing brands with the same name for any of the products
+            foreach ($validated['product_ids'] as $productId) {
+                $exists = Brand::where('name', $validated['name'])
+                            ->where('product_id', $productId)
+                            ->exists();
+
+                if ($exists) {
+                    $errors[] = "A brand with name '{$validated['name']}' already exists for product ID {$productId}";
+                    continue;
+                }
+
+                // Create the new brand for this product
+                $newBrand = Brand::create([
+                    'name' => $validated['name'],
+                    'product_id' => $productId,
+                    'environment' => $validated['environment'],
+                    'created_by' => $validated['created_by']
+                ]);
+
+                $createdBrands[] = $newBrand;
+            }
+
+            if (!empty($errors)) {
+                // Roll back any created brands if there were errors
+                foreach ($createdBrands as $brand) {
+                    $brand->delete();
+                }
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation Error: ' . implode(', ', $errors),
+                    'errors' => ['product_ids' => $errors],
+                ], 422);
+            }
 
             // Log the creation
+            $inputNew = $request->only(['name', 'product_ids', 'environment']);
             (new ApplicationLogController())->storeLog(
                 $request,
                 'Brand',
                 'Create',
-                'Created brand with id: ' . $newBrand->id . ', details: ' . json_encode($inputNew) . '.',
+                'Created brands with details: ' . json_encode($inputNew) . '.',
                 auth()->user()->id
             );
 
-            // Return success response
             return response()->json([
                 'success' => true,
-                'message' => 'Brand created successfully!',
+                'message' => count($createdBrands) . ' brand(s) created successfully!',
                 'data' => [
-                    'brand' => $newBrand,
+                    'brands' => $createdBrands,
                 ],
             ], 200);
 
         } catch (ValidationException $e) {
-            // Catch validation errors and return specific messages
             return response()->json([
                 'success' => false,
                 'message' => 'Validation Error: ' . $e->validator->errors()->first(),
@@ -135,14 +174,12 @@ class BrandController extends Controller
             ], 422);
 
         } catch (QueryException $exception) {
-            // Handle database query exception
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create brand: ' . $exception->getMessage(),
+                'message' => 'Failed to create brand(s): ' . $exception->getMessage(),
             ], 500);
 
         } catch (\Exception $e) {
-            // Handle other exceptions
             Log::error('Brand creation error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,

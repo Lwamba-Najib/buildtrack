@@ -487,7 +487,7 @@ watch([types, activities], () => {
 											<td>
 												{{ log.user ? log.user.name : "N/A" }}
 											</td>
-											<td>{{ parseDate(log.created_at) }}</td>
+											<td>{{ log.formatted_created_at }}</td>
 											<td>
 												<div class="d-flex">
 													<div class="dropdown">

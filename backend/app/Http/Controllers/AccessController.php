@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Carbon\Carbon;
 use App\Models\User;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\PasswordPolicy;
 use App\Models\SecuritySettings;
@@ -107,8 +108,26 @@ class AccessController extends Controller
                     ], 500);
                 }
 
+                // Generate a unique session ID for this login
+                $newSessionId = Str::uuid()->toString();
+
+                // If user has an existing session ID, revoke all their tokens (log them out)
+                if ($user->session_id) {
+                    $user->tokens()->delete();
+
+                    // Log the forced logout event
+                    (new ApplicationLogController())->storeLog(
+                        $request,
+                        'Authentication',
+                        'Force Logout',
+                        'User was logged out from another device due to new login.',
+                        $user->id
+                    );
+                }
+
                 // **Reset failed attempts & unlock if applicable**
                 $user->update([
+                    'session_id' => $newSessionId,
                     'failed_attempts' => 0,
                     'lockout_until' => null,
                     'last_failed_attempt' => null,
@@ -162,8 +181,8 @@ class AccessController extends Controller
 
                 // If 2FA is not enabled, proceed with normal authentication
 
-                // Proceed with authentication
-                $token = $user->createToken('authToken')->plainTextToken;
+                // Create token with session ID in the name for easier identification
+                $token = $user->createToken('authToken_' . $newSessionId)->plainTextToken;
 
                 // Log the authentication event
                 (new ApplicationLogController())->storeLog(
@@ -245,15 +264,31 @@ class AccessController extends Controller
         }
         // Verify the OTP
         if (Hash::check($request->otp, $user->otp)) {
-            // OTP is correct, proceed with authentication
-            $token = $user->createToken('authToken')->plainTextToken;
+            // Generate new session ID
+            $newSessionId = Str::uuid()->toString();
+
+            // If user has an existing session, revoke it
+            if ($user->session_id) {
+                $user->tokens()->delete();
+
+                // Log the forced logout
+                (new ApplicationLogController())->storeLog(
+                    $request,
+                    'Authentication',
+                    'Force Logout',
+                    'User was logged out from another device due to new login (2FA).',
+                    $user->id
+                );
+            }
 
             // Clear the OTP and its expiry time after successful verification
             $user->update([
+                'session_id' => $newSessionId,
                 'otp' => null,
                 'otp_expires_at' => null,
             ]);
-
+            // Create token with session ID
+            $token = $user->createToken('authToken_' . $newSessionId)->plainTextToken;
             // Log the authentication event
             /* (new ApplicationLogController())->storeLog(
                 $request,
@@ -314,6 +349,7 @@ class AccessController extends Controller
     {
         // Check if the user is authenticated
         if (Auth::check()) {
+            $user = Auth::user(); // Retrieve the authenticated user
             // Get the session lifetime from the config (in minutes)
             $sessionLifetime = config('session.lifetime');
 
@@ -506,11 +542,15 @@ class AccessController extends Controller
         //Log::info('Accessing logged in user data', ['user' => $user]);
 
         if ($user) {
+            // Clear the session ID when logging out
+            $user->update(['session_id' => null]);
             // Store the log
             (new ApplicationLogController())->storeLog($request, 'Authentication', 'Logout', 'User logged out successfully.', $user->id);
 
             // Revoke all tokens for the user
             $user->tokens()->delete();
+            Auth::logout();
+            Session::flush();
 
             return response()->json([
                 'success' => true,

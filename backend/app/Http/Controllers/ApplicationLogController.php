@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ApplicationLog;
+use Carbon\Carbon;
 use WhichBrowser\Parser;
 use Jenssegers\Agent\Agent;
 use Illuminate\Http\Request;
 use App\Enums\PaginationSize;
-use App\Exports\ApplicationLogsExport;
+use App\Models\ApplicationLog;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ApplicationLogsExport;
 use Illuminate\Database\QueryException;
 
 class ApplicationLogController extends Controller
@@ -79,6 +80,12 @@ class ApplicationLogController extends Controller
 
             // Fetch the paginated data
             $applicationlogs = $query->orderBy('id', 'DESC')->paginate($paginationSize);
+
+            // Format created_at timestamps
+            $applicationlogs->getCollection()->transform(function ($applicationlog) {
+                $applicationlog->formatted_created_at = Carbon::parse($applicationlog->created_at)->format('Y-m-d | h:i:s A');
+                return $applicationlog;
+            });
 
             return response()->json($applicationlogs);
         } catch (\Exception $e) {

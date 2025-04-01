@@ -78,13 +78,13 @@ export default createStore({
                         resolve();
                     } else {
                         console.error("Backend logout failed:", response.data.message);
-                        alert("An error occurred while logging out. Redirecting to the login page.");
+                        //alert("An error occurred while logging out. Redirecting to the login page.");
                         dispatch("navigateToLogin");
                     }
                 } catch (error) {
                     // Handle backend unreachable or other errors
                     console.error("Error during logout:", error);
-                    alert("The backend is currently unreachable. You will be redirected to the login page.");
+                    //alert("The backend is currently unreachable. You will be redirected to the login page.");
                     
                     // Clear local state and localStorage to ensure the user is logged out
                     commit("WhenOut");

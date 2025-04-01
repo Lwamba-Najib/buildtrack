@@ -97,11 +97,11 @@ const fetchSettings = async () => {
             }
         } else {
             console.error("Expected settings not found in response data.");
-            alert("Failed to load settings. Please try again later.");
+            //alert("Failed to load settings. Please try again later.");
         }
     } catch (error) {
         console.error("Error fetching settings:", error);
-        alert("Failed to load settings. Please try again later.");
+        //alert("Failed to load settings. Please try again later.");
     } 
 };
 

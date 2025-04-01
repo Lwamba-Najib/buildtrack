@@ -17,15 +17,14 @@ return new class extends Migration
             $table->string('name');
             $table->string('gender');
             $table->string('nin')->unique();
-            $table->string('country',55);
-            $table->string('code',5);
+            $table->string('country',55)->nullable();
+            $table->string('code',5)->nullable();
             $table->string('phone_number')->unique();
             $table->string('email')->unique();
             $table->string('password');
-            $table->string('otp');
+            $table->string('otp')->nullable();
             $table->timestamp('otp_expires_at')->nullable();
             $table->unsignedBigInteger('role_id')->nullable(); // Define column without constraint
-            $table->string('user_type',32);
             $table->integer('failed_attempts')->default(0);
             $table->timestamp('last_failed_attempt')->nullable();
             $table->timestamp('lockout_until')->nullable();
@@ -34,6 +33,7 @@ return new class extends Migration
             $table->enum('environment', ['PRODUCTION', 'TEST', 'DEVELOPMENT']);
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
+            $table->string('session_id')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
