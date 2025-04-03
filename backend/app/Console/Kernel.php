@@ -4,6 +4,7 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use Spatie\Backup\BackupDestination\BackupDestinationFactory;
 
 class Kernel extends ConsoleKernel
 {
@@ -13,8 +14,14 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // $schedule->command('inspire')->hourly();
-        // Run the command daily at midnight
+        // Lock dormant users daily
         $schedule->command('users:lock-dormant')->daily();
+
+        // Run backups only in non-production environments
+        if (env('APP_ENV') !== 'production') {
+            // Run backup every day at midnight and noon
+            $schedule->command('backup:run')->twiceDaily(0, 12);
+        }
     }
 
     /**

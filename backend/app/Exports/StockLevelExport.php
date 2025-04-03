@@ -2,7 +2,8 @@
 
 namespace App\Exports;
 
-use App\Models\Client;
+use App\Models\Sales;
+use App\Models\StockBalance;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Events\AfterSheet;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -10,14 +11,14 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithCustomStartCell;
 
-class ClientsExport implements FromCollection, WithHeadings, WithCustomStartCell, WithEvents
+class StockLevelExport implements FromCollection, WithHeadings, WithCustomStartCell, WithEvents
 {
     /**
     * @return \Illuminate\Support\Collection
     */
     public function collection()
     {
-        return Client::select(
+        return StockBalance::select(
             'client_number',
             'business_name',
             'registration_number',
@@ -70,7 +71,7 @@ class ClientsExport implements FromCollection, WithHeadings, WithCustomStartCell
     {
         return [
             AfterSheet::class => function(AfterSheet $event) {
-                $event->sheet->setCellValue('A1', 'List of Clients');
+                $event->sheet->setCellValue('A1', 'List of Stock Levels');
                 $event->sheet->setCellValue('A2', 'Printed on: ' . date('Y-m-d H:i:s'));
 
                 // Optionally style the title and printed date

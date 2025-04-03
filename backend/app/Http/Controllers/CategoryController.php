@@ -160,7 +160,7 @@ class CategoryController extends Controller
     public function update(Request $request, Category $category)
     {
         try {
-            Log::info('Request Data:', $request->all()); // Log the incoming data
+            //Log::info('Request Data:', $request->all()); // Log the incoming data
             // Validate request data
             $validated = $request->validate([
                 'name' => [
