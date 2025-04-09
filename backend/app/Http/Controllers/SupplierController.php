@@ -96,6 +96,7 @@ class SupplierController extends Controller
             $validated['supplier_number'] = $supplier_number;
             $validated['name'] = ucwords($validated['name']);
             $validated['tin'] = strtoupper($validated['tin']);
+            $validated['address'] = ucwords($validated['address']);
             $validated['environment'] = strtoupper($validated['environment']);
             $validated['created_by'] = auth()->user()->id;
 
@@ -180,6 +181,7 @@ class SupplierController extends Controller
             // Sanitize and normalize data
             $validated['name'] = ucwords($validated['name']);
             $validated['tin'] = strtoupper($validated['tin']);
+            $validated['address'] = ucwords($validated['address']);
             $validated['updated_by'] = auth()->user()->id;
 
             // Extract specific stored data for logging

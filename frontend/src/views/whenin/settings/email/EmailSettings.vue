@@ -260,7 +260,7 @@ onMounted(() => {
 // Reinitialize Select2 and validate form on dependency changes
 watch([smtp_auth, smtp_encryption], () => {    
     initializeSelect2();
-    validateForm();
+    //validateForm();
 }, { immediate: true }); // Ensure both actions run immediately when dependencies are populated
 </script>
 

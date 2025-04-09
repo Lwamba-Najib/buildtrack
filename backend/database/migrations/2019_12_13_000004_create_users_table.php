@@ -17,8 +17,8 @@ return new class extends Migration
             $table->string('name');
             $table->string('gender');
             $table->string('nin')->unique();
-            $table->string('country',55)->nullable();
-            $table->string('code',5)->nullable();
+            $table->string('country',55)->default('Uganda');
+            $table->string('code',5)->default('+256');
             $table->string('phone_number')->unique();
             $table->string('email')->unique();
             $table->string('password');

@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('batch_number');
             $table->integer('quantity');
             $table->integer('unit_price');
-            $table->integer('total_cost');
+            $table->bigInteger('total_cost');
             $table->integer('sale_price');
             $table->integer('min_stock_level');
             $table->foreignId('supplier_id')->constrained('suppliers')->cascadeOnDelete();

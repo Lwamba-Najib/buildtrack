@@ -444,7 +444,6 @@ class UserController extends Controller
         return Excel::download(new UsersExport, $filename);
     }
 
-
     /**
      * Get user gender resource.
      */

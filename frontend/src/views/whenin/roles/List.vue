@@ -439,8 +439,8 @@ watch(paginationSize, () => {
 											</td>
 											<td class="control-column"></td>
 										</tr>
-										<tr v-if="roles.length === 0">
-											<th colspan="5" class="text-center">
+										<tr v-if="!isLoading && roles.length === 0">
+											<th colspan="7" class="text-center">
 												No records found.
 											</th>
 										</tr>

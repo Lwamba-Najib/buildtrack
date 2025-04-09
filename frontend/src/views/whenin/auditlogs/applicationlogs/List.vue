@@ -521,8 +521,8 @@ watch([types, activities], () => {
 											</td>
 											<td class="control-column"></td>
 										</tr>
-										<tr v-if="applicationlogs.length === 0">
-											<th colspan="8" class="text-center">
+										<tr v-if="!isLoading && applicationlogs.length === 0">
+											<th colspan="9" class="text-center">
 												No records found.
 											</th>
 										</tr>

@@ -357,8 +357,8 @@ const getStockStatus = (balance, minStockLevel) => {
 											<td>{{ log.product.name || "N/A" }}</td>
 											<td>{{ log.brand.name || "N/A" }}</td>
 											<td>{{ log.measurement.name || "N/A" }}</td>
-											<td>{{ Number(log.balance).toLocaleString() || 0 }}</td>
-											<td>{{ Number(log.total_sold).toLocaleString() || 0 }}</td>
+											<td class="text-end">{{ Number(log.balance).toLocaleString() || 0 }}</td>
+											<td class="text-end">{{ Number(log.total_sold).toLocaleString() || 0 }}</td>
 											<td>
 												<span :class="getStockStatus(log.balance, log.min_stock_level).class" class="badge">
 													{{ getStockStatus(log.balance, log.min_stock_level).text }}
@@ -366,8 +366,8 @@ const getStockStatus = (balance, minStockLevel) => {
 											</td>
 											<td class="control-column"></td>
 										</tr>
-										<tr v-if="stocks.length === 0">
-											<th colspan="7" class="text-center">
+										<tr v-if="!isLoading && stocks.length === 0">
+											<th colspan="8" class="text-center">
 												No records found.
 											</th>
 										</tr>

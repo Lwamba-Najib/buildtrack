@@ -363,8 +363,8 @@ watch(paginationSize, () => {
 											</td>
 											<td class="control-column"></td>
 										</tr>
-										<tr v-if="trashArray.length === 0">
-											<th colspan="4" class="text-center">
+										<tr v-if="!isLoading && trashArray.length === 0">
+											<th colspan="6" class="text-center">
 												No records found.
 											</th>
 										</tr>

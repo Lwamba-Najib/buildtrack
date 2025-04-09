@@ -96,40 +96,63 @@ export const accessKeys = [
     { key: "salesReceipt",name: "Receipt",category: "Sales",visibility: "public", availability: "private"},
 
     /* Reports Sales */
-    { key: "reportDailySalesList", name: "Daily Sales List", category: "Sales Reports", visibility: "public", availability: "private" },
-    { key: "reportDailySalesListExport", name: "Export Daily Sales List", category: "Sales Reports", visibility: "public", availability: "private" },
-    { key: "reportWeeklySalesList", name: "Weekly Sales List", category: "Sales Reports", visibility: "public", availability: "private" },
-    { key: "reportWeeklySalesListExport", name: "Export Weekly Sales List", category: "Sales Reports", visibility: "public", availability: "private" },
-    { key: "reportMonthlySalesList", name: "Monthly Sales List", category: "Sales Reports", visibility: "public", availability: "private" },
-    { key: "reportMonthlySalesListExport", name: "Export Monthly Sales List", category: "Sales Reports", visibility: "public", availability: "private" },
-    { key: "reportInterimSalesList", name: "Interim Sales List", category: "Sales Reports", visibility: "public", availability: "private" },
-    { key: "reportInterimSalesListExport", name: "Export Interim Sales List", category: "Sales Reports", visibility: "public", availability: "private" },
-    { key: "reportTopSalesList", name: "Top Sales List", category: "Sales Reports", visibility: "public", availability: "private" },
-    { key: "reportTopSalesListExport", name: "Export Top Sales List", category: "Sales Reports", visibility: "public", availability: "private" },
+    { key: "reportDailySalesList", name: "List Daily Sales", category: "Sales Reports", visibility: "public", availability: "private" },
+    { key: "reportDailySalesFilter", name: "Filter Daily Sales", category: "Sales Reports", visibility: "public", availability: "private" },
+    { key: "reportDailySalesExport", name: "Export Daily Sales", category: "Sales Reports", visibility: "public", availability: "private" },
 
-    /* Reports Financial */
-    { key: "reportRevenueList", name: "Revenue List", category: "Financial Reports", visibility: "public", availability: "private" },
-    { key: "reportRevenueListExport", name: "Export Revenue List", category: "Financial Reports", visibility: "public", availability: "private" },
-    { key: "reportProfitLossList", name: "Profit & Loss List", category: "Financial Reports", visibility: "public", availability: "private" },
-    { key: "reportProfitLossListExport", name: "Export Profit & Loss List", category: "Financial Reports", visibility: "public", availability: "private" },
-    { key: "reportExpenseList", name: "Expense List", category: "Financial Reports", visibility: "public", availability: "private" },
-    { key: "reportExpenseListExport", name: "Export Expense List", category: "Financial Reports", visibility: "public", availability: "private" },
-    { key: "reportSupplierList", name: "Supplier List", category: "Financial Reports", visibility: "public", availability: "private" },
-    { key: "reportSupplierListExport", name: "Export Supplier List", category: "Financial Reports", visibility: "public", availability: "private" },
-    { key: "reportTaxList", name: "Tax List", category: "Financial Reports", visibility: "public", availability: "private" },
-    { key: "reportTaxListExport", name: "Export Tax List", category: "Financial Reports", visibility: "public", availability: "private" },
+    { key: "reportWeeklySalesList", name: "List Weekly Sales", category: "Sales Reports", visibility: "public", availability: "private" },
+    { key: "reportWeeklySalesFilter", name: "Filter Weekly Sales", category: "Sales Reports", visibility: "public", availability: "private" },
+    { key: "reportWeeklySalesExport", name: "Export Weekly Sales", category: "Sales Reports", visibility: "public", availability: "private" },
+
+    { key: "reportMonthlySalesList", name: "List Monthly Sales", category: "Sales Reports", visibility: "public", availability: "private" },
+    { key: "reportMonthlySalesFilter", name: "Filter Monthly Sales", category: "Sales Reports", visibility: "public", availability: "private" },
+    { key: "reportMonthlySalesExport", name: "Export Monthly Sales", category: "Sales Reports", visibility: "public", availability: "private" },
+
+    { key: "reportConsolidatedSalesList", name: "List Consolidated Sales", category: "Sales Reports", visibility: "public", availability: "private" },
+    { key: "reportConsolidatedSalesFilter", name: "Filter Consolidated Sales", category: "Sales Reports", visibility: "public", availability: "private" },
+    { key: "reportConsolidatedSalesExport", name: "Export Consolidated Sales", category: "Sales Reports", visibility: "public", availability: "private" },
 
     /* Reports Inventory */
-    { key: "reportStockList", name: "Stock List", category: "Inventory Reports", visibility: "public", availability: "private" },
-    { key: "reportStockListExport", name: "Export Stock List", category: "Inventory Reports", visibility: "public", availability: "private" },
-    { key: "reportStockBalanceList", name: "Stock Balance List", category: "Inventory Reports", visibility: "public", availability: "private" },
-    { key: "reportStockBalanceListExport", name: "Export Stock Balance List", category: "Inventory Reports", visibility: "public", availability: "private" },
-    { key: "reportLowStockAlertList", name: "Low Stock Alert List", category: "Inventory Reports", visibility: "public", availability: "private" },
-    { key: "reportLowStockAlertListExport", name: "Export Low Stock Alert List", category: "Inventory Reports", visibility: "public", availability: "private" },
-    { key: "reportStockValuationList", name: "Stock Valuation List", category: "Inventory Reports", visibility: "public", availability: "private" },
-    { key: "reportStockValuationListExport", name: "Export Stock Valuation List", category: "Inventory Reports", visibility: "public", availability: "private" },
-    { key: "reportStockAgingList", name: "Stock Aging List", category: "Inventory Reports", visibility: "public", availability: "private" },
-    { key: "reportStockAgingListExport", name: "Export Stock Aging List", category: "Inventory Reports", visibility: "public", availability: "private" },
+    { key: "reportStockList", name: "List Stock", category: "Inventory Reports", visibility: "public", availability: "private" },
+    { key: "reportStockFilter", name: "Filter Stock", category: "Inventory Reports", visibility: "public", availability: "private" },
+    { key: "reportStockExport", name: "Export Stock", category: "Inventory Reports", visibility: "public", availability: "private" },
+
+    { key: "reportStockBalanceList", name: "List Stock Balance", category: "Inventory Reports", visibility: "public", availability: "private" },
+    { key: "reportStockBalanceFilter", name: "Filter Stock Balance", category: "Inventory Reports", visibility: "public", availability: "private" },
+    { key: "reportStockBalanceExport", name: "Export Stock Balance", category: "Inventory Reports", visibility: "public", availability: "private" },
+
+    { key: "reportLowStockAlertList", name: "List Low Stock Alert", category: "Inventory Reports", visibility: "public", availability: "private" },
+    { key: "reportLowStockAlertFilter", name: "Filter Low Stock Alert", category: "Inventory Reports", visibility: "public", availability: "private" },
+    { key: "reportLowStockAlertExport", name: "Export Low Stock Alert", category: "Inventory Reports", visibility: "public", availability: "private" },
+
+    { key: "reportStockValuationList", name: "List Stock Valuation", category: "Inventory Reports", visibility: "public", availability: "private" },
+    { key: "reportStockValuationFilter", name: "Filter Stock Valuation", category: "Inventory Reports", visibility: "public", availability: "private" },
+    { key: "reportStockValuationExport", name: "Export Stock Valuation", category: "Inventory Reports", visibility: "public", availability: "private" },
+
+    { key: "reportStockAgingList", name: "List Stock Aging", category: "Inventory Reports", visibility: "public", availability: "private" },
+    { key: "reportStockAgingFilter", name: "Filter Stock Aging", category: "Inventory Reports", visibility: "public", availability: "private" },
+    { key: "reportStockAgingExport", name: "Export Stock Aging", category: "Inventory Reports", visibility: "public", availability: "private" },
+
+    /* Reports Financial */
+    { key: "reportRevenueList", name: "List Revenue", category: "Financial Reports", visibility: "public", availability: "private" },
+    { key: "reportRevenueFilter", name: "Filter Revenue", category: "Financial Reports", visibility: "public", availability: "private" },
+    { key: "reportRevenueExport", name: "Export Revenue", category: "Financial Reports", visibility: "public", availability: "private" },
+
+    { key: "reportProfitLossList", name: "List Profit & Loss", category: "Financial Reports", visibility: "public", availability: "private" },
+    { key: "reportProfitLossFilter", name: "Filter Profit & Loss", category: "Financial Reports", visibility: "public", availability: "private" },    
+    { key: "reportProfitLossExport", name: "Export Profit & Loss", category: "Financial Reports", visibility: "public", availability: "private" },
+
+    { key: "reportExpenseList", name: "List Expense", category: "Financial Reports", visibility: "public", availability: "private" },
+    { key: "reportExpenseFilter", name: "Filter Expense", category: "Financial Reports", visibility: "public", availability: "private" },
+    { key: "reportExpenseExport", name: "Export Expense", category: "Financial Reports", visibility: "public", availability: "private" },
+
+    { key: "reportSupplierList", name: "List Supplier", category: "Financial Reports", visibility: "public", availability: "private" },
+    { key: "reportSupplierFilter", name: "Filter Supplier", category: "Financial Reports", visibility: "public", availability: "private" },
+    { key: "reportSupplierExport", name: "Export Supplier", category: "Financial Reports", visibility: "public", availability: "private" },
+
+    { key: "reportTaxList", name: "List Tax", category: "Financial Reports", visibility: "public", availability: "private" },
+    { key: "reportTaxFilter", name: "Filter Tax", category: "Financial Reports", visibility: "public", availability: "private" },  
+    { key: "reportTaxExport", name: "Export Tax", category: "Financial Reports", visibility: "public", availability: "private" },   
 
     // Manage Settings
     { key: "settings", name: "Settings", category: "Settings", visibility: "private", availability: "private" },

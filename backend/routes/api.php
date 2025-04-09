@@ -20,10 +20,14 @@ use App\Http\Controllers\MeasurementController;
 use App\Http\Controllers\StockBalanceController;
 use App\Http\Controllers\EmailSettingsController;
 use App\Http\Controllers\ApplicationLogController;
+use App\Http\Controllers\ReportDailySalesController;
 use App\Http\Controllers\SecuritySettingsController;
+use App\Http\Controllers\ReportWeeklySalesController;
 use App\Http\Controllers\AppearanceSettingsController;
+use App\Http\Controllers\ReportMonthlySalesController;
 use App\Http\Controllers\BusinessInfoSettingsController;
 use Laravel\Sanctum\Http\Controllers\CsrfCookieController;
+use App\Http\Controllers\ReportConsolidatedSalesController;
 
 /*
 |--------------------------------------------------------------------------
@@ -166,6 +170,26 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('getmeasurementsbybrandinstock/{brandId}', [SalesController::class, 'getMeasurementsByBrandInstock']);
     Route::get('getsalepriceinstock', [SalesController::class, 'getSalePriceInstock']);
     Route::post('salesstore', [SalesController::class, 'store']);
+
+    //Report Daily Sales
+    Route::get('reportdailysaleslist', [ReportDailySalesController::class, 'index']);
+    Route::get('reportdailysalesxlsx', [ReportDailySalesController::class, 'xlsx']);
+    Route::get('reportdailysalescsv', [ReportDailySalesController::class, 'csv']);
+
+    //Report Weekly Sales
+    Route::get('reportweeklysaleslist', [ReportWeeklySalesController::class, 'index']);
+    Route::get('reportweeklysalesxlsx', [ReportWeeklySalesController::class, 'xlsx']);
+    Route::get('reportweeklysalescsv', [ReportWeeklySalesController::class, 'csv']);
+
+    //Report Monthly Sales
+    Route::get('reportmonthlysaleslist', [ReportMonthlySalesController::class, 'index']);
+    Route::get('reportmonthlysalesxlsx', [ReportMonthlySalesController::class, 'xlsx']);
+    Route::get('reportmonthlysalescsv', [ReportMonthlySalesController::class, 'csv']);
+
+    //Report Consolidated Sales
+    Route::get('reportconsolidatedsaleslist', [ReportConsolidatedSalesController::class, 'index']);
+    Route::get('reportConsolidatedsalesxlsx', [ReportConsolidatedSalesController::class, 'xlsx']);
+    Route::get('reportconsolidatedsalescsv', [ReportConsolidatedSalesController::class, 'csv']);
 
     //Address Book
     Route::get('addressbook/{phone_number}', [AddressBookController::class, 'show']);

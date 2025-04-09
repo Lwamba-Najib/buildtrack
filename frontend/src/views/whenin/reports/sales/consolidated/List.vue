@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, reactive, watch, nextTick, computed } from "vue";
+import { onMounted, ref, reactive, watch, nextTick } from "vue";
 import { RouterLink } from "vue-router";
 import { useStore } from 'vuex';
 import { useCustomUtils } from "@/utils/customUtils";
@@ -7,10 +7,7 @@ import { PaginationSizes, PaginationSizeOptions } from "@/enums/paginationSizes"
 import axios from "@/axios";
 import LoadingIndicator from "../../../singles/SpinnerGrow.vue";
 import { useMenuAccess } from "@/permissions";
-import DatePicker from '@vuepic/vue-datepicker';
-import '@vuepic/vue-datepicker/dist/main.css'
 
-// Use the menu access composable
 const { menuAccess } = useMenuAccess();
 const {
 	showFilterForms,
@@ -19,43 +16,41 @@ const {
 	parseDate,
 } = useCustomUtils();
 
-// Access Vuex store
 const store = useStore();
 const isLoading = ref(false);
 const searchQuery = ref("");
 const searchExecuted = ref(false);
 const sales = ref([]);
-const selectedMonth = ref("");
+const reportStart = ref("");
+const reportEnd = ref("");
 const totalSales = ref("0");
 const pagination = ref({ currentPage: 1, lastPage: 1, total: 0 });
 const paginationSize = ref(PaginationSizes.SMALL);
 const paginationSizeOptions = PaginationSizeOptions;
-const filterMonth = ref(""); // For API calls
-const tempFilterMonth = ref(""); // Temporary storage before submit
+const filterDateRange = ref("");
+const reportType = ref("daily");
 const alerts = reactive({
 	success: "",
 	error: "",
 });
 
-// Helper function to retrieve token
 const getToken = () => {
 	const token = localStorage.getItem("token");
 	if (!token) throw new Error("No token found");
 	return token;
 };
 
-// Centralized error handling function
 const handleError = (error, alertField = "error") => {
 	alerts[alertField] = error.response?.data?.message || "An error occurred. Please try again later.";
 	console.error("API Error:", error);
 };
 
-const fetchReportMonthlySales = async (page = 1) => {
+const fetchReportConsolidatedSales = async (page = 1) => {
 	isLoading.value = true;
 	try {
 		const token = getToken();
 
-		const response = await axios.get("/reportmonthlysaleslist", {
+		const response = await axios.get("/reportconsolidatedsaleslist", {
 			headers: {
 				Authorization: `Bearer ${token}`,
 			},
@@ -63,13 +58,15 @@ const fetchReportMonthlySales = async (page = 1) => {
 				pagination_size: paginationSize.value,
 				page: page,
 				search: searchQuery.value,
-				month: filterMonth.value,
+				date_range: filterDateRange.value,
+				report_type: reportType.value,
 			},
 		});
 
 		if (response.status === 200) {
 			sales.value = response.data.data?.data || [];
-			selectedMonth.value = response.data.selected_month || new Date().toISOString().slice(0, 7);
+			reportStart.value = response.data.report_start;
+			reportEnd.value = response.data.report_end;
 			totalSales.value = response.data.total_sales;
 
 			pagination.value = {
@@ -78,7 +75,7 @@ const fetchReportMonthlySales = async (page = 1) => {
 				total: response.data.data.total,
 			};
 		} else {
-			console.error("Error fetching monthly sales report:", response.statusText);
+			console.error("Error fetching consolidated report:", response.statusText);
 		}
 	} catch (error) {
 		handleError(error);
@@ -90,8 +87,8 @@ const fetchReportMonthlySales = async (page = 1) => {
 const exportFile = async (fileType) => {
 	isLoading.value = true;
 	const urls = {
-		xlsx: "/reportmonthlysalesxlsx",
-		csv: "/reportmonthlysalescsv",
+		xlsx: "/reportconsolidatedsalesxlsx",
+		csv: "/reportconsolidatedsalescsv",
 	};
 
 	try {
@@ -100,11 +97,14 @@ const exportFile = async (fileType) => {
 			headers: { Authorization: `Bearer ${token}` },
 			responseType: "blob",
 			params: {
-				month: filterMonth.value
+				date_range: filterDateRange.value,
+				report_type: reportType.value
 			}
 		});
 
-		const filename = `${filterMonth.value || new Date().toISOString().slice(0, 7)}_reportmonthlysales.${fileType}`;
+		const today = new Date().toISOString().split("T")[0].replace(/-/g, "_");
+		const filename = `${today}_reportconsolidatedsales.${fileType}`;
+
 		const disposition = response.headers["content-disposition"];
 		const filenameMatch = disposition
 			? disposition.match(/filename="([^"]*)"/)
@@ -129,109 +129,127 @@ const exportFile = async (fileType) => {
 const exportXlsx = () => exportFile("xlsx");
 const exportCsv = () => exportFile("csv");
 
-// Initial data fetch
 onMounted(() => {
 	new Podtable("#table", {
 		keepCell: [9],
 	});
-	fetchReportMonthlySales();
+	fetchReportConsolidatedSales();
 });
 
-// Search function
 const search = () => {
 	searchExecuted.value = true;
-	fetchReportMonthlySales();
+	fetchReportConsolidatedSales();
 };
 
-// Clear search and reset
 const clearSearch = () => {
 	searchQuery.value = "";
 	searchExecuted.value = false;
-	fetchReportMonthlySales();
+	fetchReportConsolidatedSales();
 };
 
-// Reset filters and hide filter forms
 const resetFiltersAndHide = () => {
-	filterMonth.value = "";
-	tempFilterMonth.value = "";
+	filterDateRange.value = "";
+	reportType.value = "daily";
+	$(".datepicker").val("");
 	hideFilterForms();
-	fetchReportMonthlySales();
+	fetchReportConsolidatedSales();
 };
 
-// Apply filters
 const applyFilters = () => {
-	if (tempFilterMonth.value) {
-		const date = new Date(tempFilterMonth.value);
-		const year = date.getFullYear();
-		const month = String(date.getMonth() + 1).padStart(2, '0');
-		filterMonth.value = `${year}-${month}`;
-	} else {
-		filterMonth.value = "";
-	}
-	fetchReportMonthlySales();
+	fetchReportConsolidatedSales();
 };
 
-// Handle pagination button click
 const handlePaginationClick = (page) => {
 	if (page > 0 && page <= pagination.value.lastPage) {
-		fetchReportMonthlySales(page);
+		fetchReportConsolidatedSales(page);
 	}
 };
 
-// Watch for pagination size changes and refetch data
 watch(paginationSize, () => {
-	fetchReportMonthlySales();
+	fetchReportConsolidatedSales();
 });
 
-// Format display value
-const displayMonth = computed(() => {
-	if (!tempFilterMonth.value) return 'Select month';
-	const date = new Date(tempFilterMonth.value);
-	return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
-});
+const initializeDatePicker = () => {
+	// Destroy any existing instance first
+	if ($(".datepicker").data('daterangepicker')) {
+		$(".datepicker").daterangepicker('destroy');
+	}
+
+	$(".datepicker").daterangepicker(
+		{
+			showWeekNumbers: true,
+			singleDatePicker: false,
+			autoUpdateInput: false,
+			locale: {
+				format: "YYYY-MM-DD",
+				firstDay: 1
+			},
+			opens: "left"
+		},
+		function (start, end) {
+			filterDateRange.value = `${start.format("YYYY-MM-DD")},${end.format("YYYY-MM-DD")}`;
+			$(".datepicker").val(
+				`${start.format("MMM D, YYYY")} - ${end.format("MMM D, YYYY")}`
+			);
+		}
+	);
+
+	// Initialize with current value if exists
+	if (filterDateRange.value) {
+		const dates = filterDateRange.value.split(',');
+		$(".datepicker").val(
+			`${moment(dates[0]).format("MMM D, YYYY")} - ${moment(dates[1]).format("MMM D, YYYY")}`
+		);
+	}
+};
 
 const handleToggleFilterForms = () => {
-	toggleFilterForms();
+	toggleFilterForms(async () => {
+		await nextTick();
+		if (reportType.value === 'custom') {
+			initializeDatePicker();
+		}
+	});
 };
+
+watch(reportType, (newVal) => {
+	if (newVal === 'custom') {
+		nextTick(() => {
+			initializeDatePicker();
+		});
+	} else {
+		filterDateRange.value = "";
+	}
+});
 </script>
 
 <template>
 	<section>
-		<!-- App hero header starts -->
 		<div class="app-hero-header d-flex align-items-center">
-			<!-- Breadcrumb start -->
 			<ol class="breadcrumb">
 				<li class="breadcrumb-item">
 					<i class="bi bi-house lh-1 pe-3 me-3 border-end border-dark"></i>
 					<RouterLink to="/home" class="text-decoration-none">Home</RouterLink>
 				</li>
 				<li class="breadcrumb-item">
-					<RouterLink to="/reportmonthlysaleslist" class="text-decoration-none">Reports</RouterLink>
+					<RouterLink to="/reportconsolidatedsaleslist" class="text-decoration-none">Reports</RouterLink>
 				</li>
-				<li class="breadcrumb-item text-secondary" aria-current="page">Monthly Sales</li>
+				<li class="breadcrumb-item text-secondary" aria-current="page">Consolidated Report</li>
 			</ol>
-			<!-- Breadcrumb end -->
 		</div>
-		<!-- App Hero header ends -->
 
-		<!-- App body starts -->
 		<div class="app-body">
-			<!-- Row start -->
-			<div class="row" v-if="
-				menuAccess.reportMonthlySalesFilter ||
-				menuAccess.reportMonthlySalesExport
-			">
+			<div class="row" v-if="menuAccess.reportConsolidatedSalesFilter || menuAccess.reportConsolidatedSalesExport">
 				<div class="col-xxl-12">
 					<div class="card mb-3">
 						<div class="card-body p-2">
 							<div class="d-flex justify-content-end my-1 my-lg-0">
 								<div class="d-flex flex-row gap-2">
-									<!-- Filter button -->
-									<button class="btn btn-sm btn-info" v-if="menuAccess.reportMonthlySalesFilter"
+									<button class="btn btn-sm btn-info" v-if="menuAccess.reportConsolidatedSalesFilter"
 										@click="handleToggleFilterForms">
 										<i class="fa fa-sliders"></i> Filter
 									</button>
-									<div class="d-flex" v-if="menuAccess.reportMonthlySalesExport">
+									<div class="d-flex" v-if="menuAccess.reportConsolidatedSalesExport">
 										<div class="dropdown">
 											<button type="button" class="btn btn-success btn-sm dropdown-toggle"
 												data-bs-toggle="dropdown">
@@ -256,21 +274,35 @@ const handleToggleFilterForms = () => {
 					</div>
 				</div>
 			</div>
-			<!-- Row end -->
 
-			<!-- Filter Form Row -->
 			<div v-if="showFilterForms" class="row">
 				<div class="col-xxl-12">
 					<div class="card mb-3">
 						<div class="card-body">
 							<div class="row gx-3">
-								<!-- Month filter -->
-								<div class="col-lg-12 col-sm-4 col-12">
+								<div class="col-lg-6 col-sm-4 col-12">
 									<div class="mb-3">
-										<label for="filterMonth" class="form-label">Month</label>
-										<DatePicker v-model="tempFilterMonth" month-picker text-input
-											text-input-format="yyyy-MM" format="yyyy-MM" placeholder="Select month"
-											:enable-time-picker="false" :max-date="new Date()" model-type="yyyy-MM" />
+										<label for="reportType" class="form-label">Report Type</label>
+										<select class="form-select" v-model="reportType">
+											<option value="daily">Daily</option>
+											<option value="weekly">Weekly</option>
+											<option value="monthly">Monthly</option>
+											<option value="quarterly">Quarterly</option>
+											<option value="yearly">Yearly</option>
+											<option value="custom">Custom Date Range</option>
+										</select>
+									</div>
+								</div>
+								<div class="col-lg-6 col-sm-4 col-12" v-if="reportType === 'custom'">
+									<div class="mb-3">
+										<label for="filterDateRange" class="form-label">Date Range</label>
+										<div class="input-group">
+											<input type="text" class="form-control datepicker"
+												placeholder="Select date range" />
+											<span class="input-group-text">
+												<i class="bi bi-calendar4-week"></i>
+											</span>
+										</div>
 									</div>
 								</div>
 							</div>
@@ -289,14 +321,13 @@ const handleToggleFilterForms = () => {
 				</div>
 			</div>
 
-			<!-- Summary Cards Row -->
 			<div class="row gx-3">
 				<div class="col-xl-3 col-sm-6 col-12">
 					<div class="card mb-3">
 						<div class="card-body">
 							<strong class="d-flex align-items-center justify-content-between">
-								Month
-								<span class="text-default">{{ selectedMonth || 'Current Month' }}</span>
+								Report Period
+								<span class="text-default">{{ reportStart }} to {{ reportEnd }}</span>
 							</strong>
 							<hr>
 							<strong class="d-flex align-items-center justify-content-between">
@@ -308,16 +339,14 @@ const handleToggleFilterForms = () => {
 				</div>
 			</div>
 
-			<!-- Main Table Row -->
 			<div class="row gx-3">
 				<div class="col-xxl-12">
 					<div class="card mb-3">
 						<div class="card-header">
 							<div class="d-flex justify-content-between align-items-center my-2 my-lg-0">
 								<div class="form-inline">
-									<!-- Pagination size dropdown -->
 									<select name="paginationSize" class="form-select form-select-sm"
-										v-model="paginationSize" @change="fetchReportMonthlySales">
+										v-model="paginationSize" @change="fetchReportConsolidatedSales">
 										<option v-for="size in paginationSizeOptions" :key="size" :value="size">
 											{{ size }}
 										</option>
@@ -339,7 +368,6 @@ const handleToggleFilterForms = () => {
 							</div>
 						</div>
 						<div class="card-body">
-							<!-- Success Alert -->
 							<div v-if="alerts.success"
 								class="alert border border-success alert-dismissible fade show text-success"
 								role="alert">
@@ -348,7 +376,6 @@ const handleToggleFilterForms = () => {
 									aria-label="Close"></button>
 							</div>
 
-							<!-- Error Alert -->
 							<div v-if="alerts.error"
 								class="alert border border-danger alert-dismissible fade show text-danger" role="alert">
 								{{ alerts.error }}
@@ -356,7 +383,6 @@ const handleToggleFilterForms = () => {
 									aria-label="Close"></button>
 							</div>
 
-							<!-- Table Container -->
 							<div class="position-relative">
 								<LoadingIndicator :isLoading="isLoading" />
 								<table id="table" class="table align-middle table-hover m-0">
@@ -381,17 +407,17 @@ const handleToggleFilterForms = () => {
 											<th scope="row">
 												{{ (pagination.currentPage - 1) * paginationSize + index + 1 }}
 											</th>
-											<td>{{ log.product.name || "N/A" }}</td>
-											<td>{{ log.brand.name || "N/A" }}</td>
-											<td>{{ log.measurement.name || "N/A" }}</td>
+											<td>{{ log.product?.name || "N/A" }}</td>
+											<td>{{ log.brand?.name || "N/A" }}</td>
+											<td>{{ log.measurement?.name || "N/A" }}</td>
 											<td>{{ log.batch_number || "N/A" }}</td>
 											<td class="text-end">{{ Number(log.quantity).toLocaleString() || 0 }}</td>
 											<td class="text-end">{{ Number(log.unit_price).toLocaleString() || 0 }}</td>
-											<td class="text-end">{{ Number(log.sale.discount).toLocaleString() || 0 }}%
+											<td class="text-end">{{ Number(log.sale?.discount || 0).toLocaleString() }}%
 											</td>
 											<td class="text-end">{{ Number(log.total_price).toLocaleString() || 0 }}
 											</td>
-											<td>{{ log.user ? log.user.name : "N/A" }}</td>
+											<td>{{ log.user?.name || "N/A" }}</td>
 											<td>{{ parseDate(log.created_at) || "N/A" }}</td>
 											<td class="control-column"></td>
 										</tr>
@@ -403,13 +429,11 @@ const handleToggleFilterForms = () => {
 									</tbody>
 								</table>
 
-								<!-- Pagination -->
 								<div v-if="pagination.total > 0" class="d-flex justify-content-between mt-2">
 									<div>
 										{{
 											`Showing ${pagination.currentPage > 1 ? (pagination.currentPage - 1) *
-												paginationSize + 1 :
-												1
+												paginationSize + 1 : 1
 											} to ${Math.min(
 												pagination.currentPage * paginationSize,
 												pagination.total
@@ -434,8 +458,7 @@ const handleToggleFilterForms = () => {
 												<template
 													v-for="pageNumber in Math.min(pagination.lastPage, pagination.currentPage + 4)">
 													<li :key="pageNumber" class="page-item" :class="{
-														active:
-															pageNumber === pagination.currentPage,
+														active: pageNumber === pagination.currentPage,
 													}" v-if="pageNumber >= pagination.currentPage && pageNumber <= pagination.currentPage + 3">
 														<button class="page-link btn-sm"
 															@click="handlePaginationClick(pageNumber)">
@@ -470,21 +493,5 @@ const handleToggleFilterForms = () => {
 </template>
 
 <style scoped>
-/* Custom styles for the date picker */
-.dp__month_year_row {
-	justify-content: center;
-}
-
-.dp__month_year_select {
-	font-weight: bold;
-}
-
-.dp__instance_calendar {
-	width: 100%;
-}
-
-/* Ensure the date picker appears above other elements */
-.dp__menu {
-	z-index: 10000 !important;
-}
+/* Add any custom styles here */
 </style>

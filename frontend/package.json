@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@popperjs/core": "^2.11.8",
+    "@vuepic/vue-datepicker": "^11.0.2",
     "axios": "^1.7.3",
     "bootstrap": "^5.0.0",
     "datatables.net": "^2.1.8",

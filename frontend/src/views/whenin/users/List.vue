@@ -834,8 +834,8 @@ watch([roles, gender], () => {
 											</td>
 											<td class="control-column"></td>
 										</tr>
-										<tr v-if="users.length === 0">
-											<th colspan="10" class="text-center">
+										<tr v-if="!isLoading && users.length === 0">
+											<th colspan="11" class="text-center">
 												No records found.
 											</th>
 										</tr>

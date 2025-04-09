@@ -490,8 +490,8 @@ const handleToggleFilterForms = () => {
 											<td>{{ log.batch_number || "N/A" }}</td>
 											<td>{{ log.customer_name || "N/A" }}</td>
 											<td>{{ log.customer_phone || "N/A" }}</td>
-											<td>{{ Number(log.discount).toLocaleString() || 0 }}</td>
-											<td>{{ Number(log.total_amount).toLocaleString() || 0 }}</td>
+											<td class="text-end">{{ Number(log.discount).toLocaleString() || 0 }}</td>
+											<td class="text-end">{{ Number(log.total_amount).toLocaleString() || 0 }}</td>
 											<td>{{ log.payment_method || "N/A" }}</td>
 											<td>{{ log.user ? log.user.name : "N/A" }}</td>
 											<td>{{ parseDate(log.created_at) || "N/A" }}</td>
@@ -548,7 +548,7 @@ const handleToggleFilterForms = () => {
 											</td>
 											<td class="control-column"></td>
 										</tr>
-										<tr v-if="sales.length === 0">
+										<tr v-if="!isLoading && sales.length === 0">
 											<th colspan="10" class="text-center">
 												No records found.
 											</th>

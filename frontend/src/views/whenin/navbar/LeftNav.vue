@@ -409,8 +409,7 @@ const isSalesListActive = computed(() => {
 					menuAccess.reportDailySalesList ||
 					menuAccess.reportWeeklySalesList ||
 					menuAccess.reportMothlySalesList || 
-					menuAccess.reportInterimSalesList ||
-					menuAccess.reportTopSalesList
+					menuAccess.reportGeneralSalesList
 					"
 					class="treeview"
 					:class="{
@@ -424,9 +423,9 @@ const isSalesListActive = computed(() => {
 					<ul class="treeview-menu">
 						<li
 							v-if="
-								menuAccess.reportDailySalesList || menuAccess.reportWeeklySalesList || menuAccess.reportMonthlySalesList || menuAccess.reportInterimSalesListt || menuAccess.reportTopSalesList
+								menuAccess.reportDailySalesList || menuAccess.reportWeeklySalesList || menuAccess.reportMonthlySalesList || menuAccess.reportConsolidatedSalesList
 							" 
-						 	:class="{'active': isActive(['/reportdailysaleslist', '/reportweeklysaleslist', '/reportmonthlysaleslist', '/reportinterimsaleslist', '/reporttopsaleslist'])}">
+						 	:class="{'active': isActive(['/reportdailysaleslist', '/reportweeklysaleslist', '/reportmonthlysaleslist', '/reportconsolidatedsaleslist'])}">
 							<a href="#!">
 								Sales Reports
 								<i class="bi bi-chevron-right"></i>
@@ -462,90 +461,18 @@ const isSalesListActive = computed(() => {
 										Monthly Sales
 									</RouterLink>
 								</li>
-								<li v-if="menuAccess.reportInterimSalesList">
+								<li v-if="menuAccess.reportConsolidatedSalesList">
 									<RouterLink
-										to="/reportinterimsaleslist"
+										to="/reportconsolidatedsaleslist"
 										:class="{
-											'active-sub': isActive(['/reportinterimsaleslist']),
+											'active-sub': isActive(['/reportconsolidatedsaleslist']),
 										}"
 									>
-										Interim Sales
+										Consolidated Sales
 									</RouterLink>
-								</li>
-								<li v-if="menuAccess.reportTopSalesList">
-									<RouterLink
-										to="/reporttopsaleslist"
-										:class="{
-											'active-sub': isActive(['/reporttopsaleslist']),
-										}"
-									>
-										Top-Selling Items
-									</RouterLink>
-								</li>								
+								</li>					
 							</ul>
 						</li>						
-						<li
-							v-if="
-								menuAccess.reportRevenueList || menuAccess.reportProfitLossList || menuAccess.reportExpenseList || menuAccess.reportSupplierList || menuAccess.reportTaxList
-							" 
-						 	:class="{'active': isActive(['/reportrevenuelist', '/reportprofitlosslist', '/reportexpenselist', '/reportsupplierlist', '/reporttaxlist'])}">
-							<a href="#!">
-								Financial Reports
-								<i class="bi bi-chevron-right"></i>
-							</a>
-							<ul class="treeview-menu">
-								<li v-if="menuAccess.reportRevenueList">
-									<RouterLink
-										to="/reportrevenuelist"
-										:class="{
-											'active-sub': isActive(['/reportrevenuelist']),
-										}"
-									>
-										Revenue
-									</RouterLink>
-								</li>
-								<li v-if="menuAccess.reportProfitLossList">
-									<RouterLink
-										to="/reportprofitlosslist"
-										:class="{
-											'active-sub': isActive(['/reportprofitlosslist']),
-										}"
-									>
-										Profit & Loss
-									</RouterLink>
-								</li>
-								<li v-if="menuAccess.reportExpenseList">
-									<RouterLink
-										to="/reportexpenselist"
-										:class="{
-											'active-sub': isActive(['/reportexpenselist']),
-										}"
-									>
-										Expense Report
-									</RouterLink>
-								</li>
-								<li v-if="menuAccess.reportSupplierList">
-									<RouterLink
-										to="/reportsupplierlist"
-										:class="{
-											'active-sub': isActive(['/reportsupplierlist']),
-										}"
-									>
-										Supplier Report
-									</RouterLink>
-								</li>
-								<li v-if="menuAccess.reportTaxList">
-									<RouterLink
-										to="/reporttaxlist"
-										:class="{
-											'active-sub': isActive(['/reporttaxlist']),
-										}"
-									>
-										Tax Report
-									</RouterLink>
-								</li>
-							</ul>
-						</li>
 						<li
 							v-if="
 								menuAccess.reportStockList || menuAccess.reportStockBalanceList || menuAccess.reportLowStockAlertList || menuAccess.reportStockValuationList || menuAccess.reportStockAgingList
@@ -608,6 +535,68 @@ const isSalesListActive = computed(() => {
 										}"
 									>
 										Stock Aging
+									</RouterLink>
+								</li>
+							</ul>
+						</li>						
+						<li
+							v-if="
+								menuAccess.reportRevenueList || menuAccess.reportProfitLossList || menuAccess.reportExpenseList || menuAccess.reportSupplierList || menuAccess.reportTaxList
+							" 
+						 	:class="{'active': isActive(['/reportrevenuelist', '/reportprofitlosslist', '/reportexpenselist', '/reportsupplierlist', '/reporttaxlist'])}">
+							<a href="#!">
+								Financial Reports
+								<i class="bi bi-chevron-right"></i>
+							</a>
+							<ul class="treeview-menu">
+								<li v-if="menuAccess.reportRevenueList">
+									<RouterLink
+										to="/reportrevenuelist"
+										:class="{
+											'active-sub': isActive(['/reportrevenuelist']),
+										}"
+									>
+										Revenue
+									</RouterLink>
+								</li>
+								<li v-if="menuAccess.reportProfitLossList">
+									<RouterLink
+										to="/reportprofitlosslist"
+										:class="{
+											'active-sub': isActive(['/reportprofitlosslist']),
+										}"
+									>
+										Profit & Loss
+									</RouterLink>
+								</li>
+								<li v-if="menuAccess.reportExpenseList">
+									<RouterLink
+										to="/reportexpenselist"
+										:class="{
+											'active-sub': isActive(['/reportexpenselist']),
+										}"
+									>
+										Expense Report
+									</RouterLink>
+								</li>
+								<li v-if="menuAccess.reportSupplierList">
+									<RouterLink
+										to="/reportsupplierlist"
+										:class="{
+											'active-sub': isActive(['/reportsupplierlist']),
+										}"
+									>
+										Supplier Report
+									</RouterLink>
+								</li>
+								<li v-if="menuAccess.reportTaxList">
+									<RouterLink
+										to="/reporttaxlist"
+										:class="{
+											'active-sub': isActive(['/reporttaxlist']),
+										}"
+									>
+										Tax Report
 									</RouterLink>
 								</li>
 							</ul>

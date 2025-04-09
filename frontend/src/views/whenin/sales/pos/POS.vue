@@ -69,6 +69,8 @@ const fetchProductsInStock = async () => {
             },
         });
         products.value = response.data;
+        // Reset Select2 dropdowns
+        // $("#batchNumber").val("").trigger("change");
     } catch (error) {
         handleError(error); // Handle error
     }
@@ -89,8 +91,7 @@ const fetchBatchNumbersByProductId = async (productId) => {
         selectedMeasurementId.value = ""; // Reset measurement field
         salePrice.value = ""; // Reset sale price field
         // Reset Select2 dropdowns
-        $("#brand").val("").trigger("change");
-        $("#measurement").val("").trigger("change");
+        // $("#brand").val("").trigger("change");
     } catch (error) {
         handleError(error); // Handle error
     }
@@ -109,9 +110,8 @@ const fetchBrandsBybatchNumber = async (batchNumber) => {
         selectedBrandId.value = "";
         selectedMeasurementId.value = ""; // Reset measurement field
         salePrice.value = ""; // Reset sale price field
-        // Reset Select2 dropdowns
-        $("#brand").val("").trigger("change");
-        $("#measurement").val("").trigger("change");
+        // Reset Select2 dropdown
+        // $("#measurement").val("").trigger("change");
     } catch (error) {
         handleError(error); // Handle error
     }
@@ -128,9 +128,7 @@ const fetchMeasurementsByBrandId = async (brandId) => {
         });
         measurements.value = response.data;
         selectedMeasurementId.value = ""; // Reset measurement field
-        salePrice.value = ""; // Reset sale price field
-        // Reset Select2 dropdown
-        $("#measurement").val("").trigger("change");
+        salePrice.value = ""; // Reset sale price field        
     } catch (error) {
         handleError(error); // Handle error
     }
@@ -206,6 +204,7 @@ const addToCart = () => {
 
         // Reset Select2 dropdowns
         $("#product").val("").trigger("change");
+        $("#batchNumber").val("").trigger("change");
         $("#brand").val("").trigger("change");
         $("#measurement").val("").trigger("change");
     } else {
@@ -693,9 +692,9 @@ watch(customerPhone, (newVal, oldVal) => {
                                                 <td>{{ item.product.name }}</td>
                                                 <td>{{ item.brand.name }}</td>
                                                 <td>{{ pluralizeMeasurement(item.measurement.name, item.quantity) }}</td>
-                                                <td>{{ item.quantity }}</td>
-                                                <td>{{ formatCurrency(item.salePrice) }}</td>
-                                                <td>{{ formatCurrency(item.quantity * item.salePrice) }}</td>
+                                                <td class="text-end">{{ item.quantity }}</td>
+                                                <td class="text-end">{{ formatCurrency(item.salePrice) }}</td>
+                                                <td class="text-end">{{ formatCurrency(item.quantity * item.salePrice) }}</td>
                                                 <td>
                                                     <button
                                                         type="button"
@@ -708,8 +707,11 @@ watch(customerPhone, (newVal, oldVal) => {
                                                 <td class="control-column"></td>
                                             </tr>
                                             <tr v-if="cart.length === 0">
-                                                <th colspan="8" class="text-center">
-                                                    Your cart is empty. Start shopping now!
+                                                <th colspan="9" class="text-center">
+                                                    <div class="d-flex flex-column align-items-center">
+                                                        <i class="bi bi-cart-x fs-1 text-muted mb-2"></i>
+                                                        <span class="text-muted">Your cart is empty. Start shopping now!</span>
+                                                    </div>
                                                 </th>
                                             </tr>
                                         </tbody>

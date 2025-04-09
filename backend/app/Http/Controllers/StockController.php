@@ -189,116 +189,83 @@ class StockController extends Controller
         }
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Stock $stock)
-    {
-        try {
-            // Validate request data
-            $validated = request()->validate([
-                'product_id' => 'required|exists:products,id',
-                'brand_id' => 'required|exists:brands,id',
-                'measurement_id' => 'required|exists:measurements,id',
-                'quantity' => 'required|integer|min:1',
-                'unit_price' => 'required|integer|min:1',
-                'sale_price' => 'required|integer|min:1',
-                'min_stock_level' => 'required|integer|min:1',
-                'supplier_id' => 'required|exists:suppliers,id',
-                'stock_date' => 'required|date',
-                'updated_by' => 'nullable',
-            ]);
+{
+    try {
+        // Validate request data
+        $validated = $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'brand_id' => 'required|exists:brands,id',
+            'measurement_id' => 'required|exists:measurements,id',
+            'quantity' => 'required|integer|min:1',
+            'unit_price' => 'required|integer|min:1',
+            'sale_price' => 'required|integer|min:1',
+            'min_stock_level' => 'required|integer|min:1',
+            'supplier_id' => 'required|exists:suppliers,id',
+            'stock_date' => 'required|date',
+            'updated_by' => 'nullable',
+        ]);
 
-            // Calculate total_cost
-            $validated['total_cost'] = $validated['quantity'] * $validated['unit_price'];
+        DB::beginTransaction();
 
-            // Set updated_by to the current user
-            $validated['updated_by'] = auth()->user()->id;
+        // Calculate total cost
+        $validated['total_cost'] = $validated['quantity'] * $validated['unit_price'];
 
-            // Start a database transaction
-            DB::beginTransaction();
+        // Set updated_by to current user
+        $validated['updated_by'] = auth()->user()->id;
 
-            // Check if unit_price or sale_price has changed
-            $batchChanged = $stock->unit_price !== $validated['unit_price'] || $stock->sale_price !== $validated['sale_price'];
+        // Preserve original values for logging
+        $originalStock = $stock->replicate();
 
-            if ($batchChanged) {
-                // Generate a new batch number since unit_price or sale_price changed
-                do {
-                    $uuid = strtoupper(substr(str_replace('-', '', Str::uuid()->toString()), 0, 14));
-                } while (str_starts_with($uuid, '0'));
+        // Keep the existing batch number
+        $validated['batch_number'] = $stock->batch_number;
 
-                $validated['batch_number'] = 'BN' . $uuid;
-            } else {
-                // Keep the existing batch number
-                $validated['batch_number'] = $stock->batch_number;
-            }
+        // Check if measurement_id has changed
+        $measurementChanged = $validated['measurement_id'] != $stock->measurement_id;
 
-            // Ensure that all stock records with the same batch_number have the same min_stock_level
-            if (!$batchChanged) {
-                $validated['min_stock_level'] = Stock::where('batch_number', $stock->batch_number)->value('min_stock_level');
-            }
-
-            // Update stock balance for the previous batch
-            $oldStockBalance = StockBalance::where('product_id', $stock->product_id)
+        if ($measurementChanged) {
+            // Update the stock_balances record to reflect the new measurement_id
+            StockBalance::where('product_id', $stock->product_id)
                 ->where('brand_id', $stock->brand_id)
                 ->where('measurement_id', $stock->measurement_id)
                 ->where('batch_number', $stock->batch_number)
-                ->first();
-
-            if ($oldStockBalance) {
-                $oldStockBalance->decrement('balance', $stock->quantity);
-            }
-
-            // Update or create stock balance for the new batch
-            $newStockBalance = StockBalance::firstOrCreate(
-                [
-                    'product_id' => $validated['product_id'],
-                    'brand_id' => $validated['brand_id'],
+                ->update([
                     'measurement_id' => $validated['measurement_id'],
-                    'batch_number' => $validated['batch_number'], // Ensure batch uniqueness in stock_balances
-                ],
-                [
-                    'balance' => 0,
-                ]
-            );
-
-            // Adjust the balance with the updated quantity
-            $newStockBalance->increment('balance', $validated['quantity']);
-
-            // Update the stock record
-            $stock->update($validated);
-
-            // Commit the transaction
-            DB::commit();
-
-            // Log the update
-            (new ApplicationLogController())->storeLog(
-                $request,
-                'Stock',
-                'Update',
-                'Updated stock with id: ' . $stock->id . ', from: ' . json_encode($stock->toArray()) . ', to: ' . json_encode($validated) . '.',
-                auth()->user()->id
-            );
-
-            // Return success response
-            return response()->json([
-                'success' => true,
-                'message' => 'Stock updated successfully!',
-                'data' => [
-                    'stock' => $stock,
-                ],
-            ], 200);
-        } catch (\Exception $e) {
-            // Rollback the transaction on error
-            DB::rollBack();
-
-            Log::error('Stock update error: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred during stock update. Please try again.',
-            ], 500);
+                ]);
         }
+
+        // Update the stock record itself
+        $stock->update($validated);
+
+        DB::commit();
+
+        // Log the update
+        (new ApplicationLogController())->storeLog(
+            $request,
+            'Stock',
+            'Update',
+            'Updated stock with id: ' . $stock->id .
+            ', from: ' . json_encode($originalStock->toArray()) .
+            ', to: ' . json_encode($validated),
+            auth()->user()->id
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Stock updated successfully!',
+            'data' => ['stock' => $stock],
+        ], 200);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Stock update error: ' . $e->getMessage());
+
+        return response()->json([
+            'success' => false,
+            'message' => 'An error occurred during stock update. Please try again.',
+        ], 500);
     }
+}
 
     /**
      * Remove the specified resource from storage.

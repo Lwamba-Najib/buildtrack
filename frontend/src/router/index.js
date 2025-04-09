@@ -63,20 +63,19 @@ import SalesInvoice from "@/views/whenin/sales/sales/Invoice.vue";
 import ReportDailySalesList from "@/views/whenin/reports/sales/daily/List.vue";
 import ReportWeeklySalesList from "@/views/whenin/reports/sales/weekly/List.vue";
 import ReportMonthlySalesList from "@/views/whenin/reports/sales/monthly/List.vue";
-import ReportInterimSalesList from "@/views/whenin/reports/sales/interim/List.vue";
-import ReportTopSalesList from "@/views/whenin/reports/sales/top/List.vue";
-// Report Financial
-import ReportRevenueList from "@/views/whenin/reports/financial/revenue/List.vue";
-import ReportProfitLossList from "@/views/whenin/reports/financial/profitloss/List.vue";
-import ReportExpenseList from "@/views/whenin/reports/financial/expense/List.vue";
-import ReportSupplierList from "@/views/whenin/reports/financial/supplier/List.vue";
-import ReportTaxList from "@/views/whenin/reports/financial/tax/List.vue";
+import ReportConsolidatedSalesList from "@/views/whenin/reports/sales/consolidated/List.vue";
 // Report Inventory
 import ReportStockList from "@/views/whenin/reports/inventory/stock/List.vue";
 import ReportStockBalanceList from "@/views/whenin/reports/inventory/stockbalance/List.vue";
 import ReportLowStockAlertList from "@/views/whenin/reports/inventory/lowstockalert/List.vue";
 import ReportStockValuationList from "@/views/whenin/reports/inventory/stockvaluation/List.vue";
 import ReportStockAgingList from "@/views/whenin/reports/inventory/stockaging/List.vue";
+// Report Financial
+import ReportRevenueList from "@/views/whenin/reports/financial/revenue/List.vue";
+import ReportProfitLossList from "@/views/whenin/reports/financial/profitloss/List.vue";
+import ReportExpenseList from "@/views/whenin/reports/financial/expense/List.vue";
+import ReportSupplierList from "@/views/whenin/reports/financial/supplier/List.vue";
+import ReportTaxList from "@/views/whenin/reports/financial/tax/List.vue";
 // Trash
 import Trash from "@/views/whenin/singles/Trash.vue";
 // Audit Logs
@@ -354,45 +353,9 @@ const router = createRouter({
                     meta: { public: false },
                 },
                 {
-                    path: "reportinterimsaleslist",
-                    name: "ReportInterimSalesList",
-                    component: ReportInterimSalesList,
-                    meta: { public: false },
-                },
-                {
-                    path: "reporttopsaleslist",
-                    name: "ReportTopSalesList",
-                    component: ReportTopSalesList,
-                    meta: { public: false },
-                },
-                {
-                    path: "reportrevenuelist",
-                    name: "ReportRevenueList",
-                    component: ReportRevenueList,
-                    meta: { public: false },
-                },
-                {
-                    path: "reportprofitlosslist",
-                    name: "ReportProfitLossList",
-                    component: ReportProfitLossList,
-                    meta: { public: false },
-                },
-                {
-                    path: "reportexpenselist",
-                    name: "ReportExpenseList",
-                    component: ReportExpenseList,
-                    meta: { public: false },
-                },
-                {
-                    path: "reportsupplierlist",
-                    name: "ReportSupplierList",
-                    component: ReportSupplierList,
-                    meta: { public: false },
-                },
-                {
-                    path: "reporttaxlist",
-                    name: "ReportTaxList",
-                    component: ReportTaxList,
+                    path: "reportconsolidatedsaleslist",
+                    name: "ReportConsolidatedSalesList",
+                    component: ReportConsolidatedSalesList,
                     meta: { public: false },
                 },
                 {
@@ -423,6 +386,36 @@ const router = createRouter({
                     path: "reportstockaginglist",
                     name: "ReportStockAgingList",
                     component: ReportStockAgingList,
+                    meta: { public: false },
+                },
+                {
+                    path: "reportrevenuelist",
+                    name: "ReportRevenueList",
+                    component: ReportRevenueList,
+                    meta: { public: false },
+                },
+                {
+                    path: "reportprofitlosslist",
+                    name: "ReportProfitLossList",
+                    component: ReportProfitLossList,
+                    meta: { public: false },
+                },
+                {
+                    path: "reportexpenselist",
+                    name: "ReportExpenseList",
+                    component: ReportExpenseList,
+                    meta: { public: false },
+                },
+                {
+                    path: "reportsupplierlist",
+                    name: "ReportSupplierList",
+                    component: ReportSupplierList,
+                    meta: { public: false },
+                },
+                {
+                    path: "reporttaxlist",
+                    name: "ReportTaxList",
+                    component: ReportTaxList,
                     meta: { public: false },
                 },
                 {

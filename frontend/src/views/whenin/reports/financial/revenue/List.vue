@@ -614,9 +614,9 @@ const handleToggleFilterForms = () => {
 											<td>{{ log.brand.name || "N/A" }}</td>
 											<td>{{ log.measurement.name || "N/A" }}</td>
 											<td>{{ log.quantity || 0 }}</td>
-											<td>{{ Number(log.unit_price).toLocaleString() || 0 }}</td>
-											<td>{{ Number(log.total_cost).toLocaleString() || 0 }}</td>
-											<td>{{ Number(log.sale_price).toLocaleString() || 0 }}</td>
+											<td class="text-end">{{ Number(log.unit_price).toLocaleString() || 0 }}</td>
+											<td class="text-end">{{ Number(log.total_cost).toLocaleString() || 0 }}</td>
+											<td class="text-end">{{ Number(log.sale_price).toLocaleString() || 0 }}</td>
 											<td>{{ log.supplier.name || "N/A" }}</td>
 											<td>{{ log.created_by ? log.created_by.name : "N/A" }}</td>
 											<td>{{ parseDate(log.stock_date) || "N/A" }}</td>

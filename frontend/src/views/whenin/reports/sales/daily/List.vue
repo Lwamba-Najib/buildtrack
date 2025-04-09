@@ -21,11 +21,12 @@ const isLoading = ref(false);
 const searchQuery = ref("");
 const searchExecuted = ref(false);
 const sales = ref([]);
+const lastSoldDate = ref("");  
+const totalSales = ref("0"); 
 const pagination = ref({ currentPage: 1, lastPage: 1, total: 0 });
 const paginationSize = ref(PaginationSizes.SMALL);
 const paginationSizeOptions = PaginationSizeOptions;
-const filterStartDate = ref(""); // Bind the start date
-const filterEndDate = ref(""); // Bind the end date
+const filterDate = ref(""); // Bind the date
 const alerts = reactive({
 	success: "",
 	error: "",
@@ -44,13 +45,13 @@ const handleError = (error, alertField = "error") => {
 };
 
 
-const fetchSales = async (page = 1) => {
+const fetchReportDailySales = async (page = 1) => {
     isLoading.value = true; // Start loading
     try {
         // Retrieve the token from local storage
         const token = getToken();
 
-        const response = await axios.get("/saleslist", {
+        const response = await axios.get("/reportdailysaleslist", {
             headers: {
                 Authorization: `Bearer ${token}`, // Include the token in the Authorization header
             },
@@ -58,23 +59,25 @@ const fetchSales = async (page = 1) => {
                 pagination_size: paginationSize.value,
                 page: page,
                 search: searchQuery.value,
-                startDate: filterStartDate.value,
-                endDate: filterEndDate.value,
+                Date: filterDate.value,
             },
         });
 
         if (response.status === 200) {
-            // Assign the data to sales
-            sales.value = response.data.data;
+            // Check if response.data.data exists (your paginated data)
+            sales.value = response.data.data?.data || [];
+			// Set last sold date and total sales
+            lastSoldDate.value = response.data.last_sold_date;
+            totalSales.value = response.data.total_sales;
 
             // Update the pagination object
             pagination.value = {
-                currentPage: response.data.current_page, // Access current_page from the root level
-                lastPage: response.data.last_page,       // Access last_page from the root level
-                total: response.data.total,              // Access total from the root level
+                currentPage: response.data.data.current_page, // Access current_page from the root level
+                lastPage: response.data.data.last_page,       // Access last_page from the root level
+                total: response.data.data.total,              // Access total from the root level
             };
         } else {
-            console.error("Error fetching sale logs:", response.statusText);
+            console.error("Error fetching report daily sale logs:", response.statusText);
         }
     } catch (error) {
         handleError(error); // Handle error using centralized error handle
@@ -88,8 +91,8 @@ const exportFile = async (fileType) => {
 
 	// Define URL endpoints for different file types
 	const urls = {
-		xlsx: "/salexlsx",
-		csv: "/salecsv",
+		xlsx: "/reportdailysalesxlsx",
+		csv: "/reportdailysalescsv",
 	};
 
 	try {
@@ -100,11 +103,14 @@ const exportFile = async (fileType) => {
 		const response = await axios.get(urls[fileType], {
 			headers: { Authorization: `Bearer ${token}` },
 			responseType: "blob", // Set response type to 'blob' to handle file downloads
+            params: {
+                Date: filterDate.value // Add this line to pass the selected date
+            }
 		});
 
 		// Generate filename with the current date
 		const today = new Date().toISOString().split("T")[0].replace(/-/g, "_"); // Format: yyyy_mm_dd
-		const filename = `${today}_sales.${fileType}`;
+		const filename = `${today}_reportdailysales.${fileType}`;
 
 		// Extract filename from Content-Disposition header if available
 		const disposition = response.headers["content-disposition"];
@@ -140,74 +146,59 @@ onMounted(() => {
 	new Podtable("#table", {
 		keepCell: [9],
 	});
-	fetchSales();
+	fetchReportDailySales();
 });
 
 // Search function
 const search = () => {
 	searchExecuted.value = true;
-	fetchSales();
+	fetchReportDailySales();
 };
 
 // Clear search and reset
 const clearSearch = () => {
 	searchQuery.value = "";
 	searchExecuted.value = false;
-	fetchSales();
+	fetchReportDailySales();
 };
 
 // Reset filters and hide filter forms
 const resetFiltersAndHide = () => {
-	filterStartDate.value = "";
-	filterEndDate.value = "";
-	$(".datepicker-start").val(filterStartDate.value);
-	$(".datepicker-end").val(filterStartDate.value);
+	filterDate.value = "";
+	$(".datepicker-one").val(filterDate.value);
 	hideFilterForms();
-	fetchSales(); // Refetch data without filters
+	fetchReportDailySales(); // Refetch data without filters
 };
 
 // Apply filters
 const applyFilters = () => {
-	fetchSales();
+	fetchReportDailySales();
 };
 
 // Handle pagination button click
 const handlePaginationClick = (page) => {
 	if (page > 0 && page <= pagination.value.lastPage) {
-		fetchSales(page);
+		fetchReportDailySales(page);
 	}
 };
 
 // Watch for pagination size changes and refetch data
 watch(paginationSize, () => {
-	fetchSales();
+	fetchReportDailySales();
 });
 
 // Initialize Date Pickers with parseDate function for date formatting
 const initializeDatePickers = () => {
 	// Start Date Picker without pre-filling
-	$(".datepicker-start").daterangepicker(
+	$(".datepicker-one").daterangepicker(
 		{
 			singleDatePicker: true,
 			autoUpdateInput: false, // Prevents auto-filling with a date
 			locale: { format: "YYYY-MM-DD" },
 		},
 		function (start) {
-			filterStartDate.value = parseDate(start.format("YYYY-MM-DD"));
-			$(".datepicker-start").val(filterStartDate.value); // Updates input field on selection
-		}
-	);
-
-	// End Date Picker without pre-filling
-	$(".datepicker-end").daterangepicker(
-		{
-			singleDatePicker: true,
-			autoUpdateInput: false, // Prevents auto-filling with a date
-			locale: { format: "YYYY-MM-DD" },
-		},
-		function (end) {
-			filterEndDate.value = parseDate(end.format("YYYY-MM-DD"));
-			$(".datepicker-end").val(filterEndDate.value); // Updates input field on selection
+			filterDate.value = parseDate(start.format("YYYY-MM-DD"));
+			$(".datepicker-one").val(filterDate.value); // Updates input field on selection
 		}
 	);
 };
@@ -231,7 +222,7 @@ const handleToggleFilterForms = () => {
 					<RouterLink to="/home" class="text-decoration-none">Home</RouterLink>
 				</li>
 				<li class="breadcrumb-item">
-					<RouterLink to="/saleslist" class="text-decoration-none"
+					<RouterLink to="/reportdailysaleslist" class="text-decoration-none"
 						>Sales</RouterLink
 					>
 				</li>
@@ -247,8 +238,8 @@ const handleToggleFilterForms = () => {
 			<div
 				class="row"
 				v-if="
-					menuAccess.salesFilter ||
-					menuAccess.salesExport
+					menuAccess.reportDailySalesFilter ||
+					menuAccess.reportDailySalesExport
 				"
 			>
 				<div class="col-xxl-12">
@@ -259,12 +250,12 @@ const handleToggleFilterForms = () => {
 									<!-- Updated Filter button to toggle visibility of filter forms -->
 									<button
 										class="btn btn-sm btn-info"
-										v-if="menuAccess.salesFilter"
+										v-if="menuAccess.reportDailySalesFilter"
 										@click="handleToggleFilterForms"
 									>
 										<i class="fa fa-sliders"></i> Filter
 									</button>
-									<div class="d-flex" v-if="menuAccess.salesExport">
+									<div class="d-flex" v-if="menuAccess.reportDailySalesExport">
 										<div class="dropdown">
 											<button
 												type="button"
@@ -312,34 +303,16 @@ const handleToggleFilterForms = () => {
 						<div class="card-body">
 							<!-- Row start -->
 							<div class="row gx-3">
-								<!-- Startdate filter -->
-								<div class="col-lg-6 col-sm-4 col-12">
+								<!-- date filter -->
+								<div class="col-lg-12 col-sm-4 col-12">
 									<div class="mb-3">
-										<label for="filterStartDate" class="form-label"
-											>Start Date</label
+										<label for="filterDate" class="form-label"
+											>Date</label
 										>
 										<div class="input-group">
 											<input
 												type="text"
-												class="form-control datepicker-start"
-												placeholder="YYYY-MM-DD"
-											/>
-											<span class="input-group-text">
-												<i class="bi bi-calendar4"></i>
-											</span>
-										</div>
-									</div>
-								</div>
-								<!-- Enddate filter -->
-								<div class="col-lg-6 col-sm-4 col-12">
-									<div class="mb-3">
-										<label for="filterEndDate" class="form-label"
-											>End Date</label
-										>
-										<div class="input-group">
-											<input
-												type="text"
-												class="form-control datepicker-end"
+												class="form-control datepicker-one"
 												placeholder="YYYY-MM-DD"
 											/>
 											<span class="input-group-text">
@@ -378,6 +351,25 @@ const handleToggleFilterForms = () => {
 			<!-- Row end -->
 			<!-- Row start -->
 			<div class="row gx-3">
+				<div class="col-xl-3 col-sm-6 col-12">
+					<div class="card mb-3">
+						<div class="card-body">
+							<strong class="d-flex align-items-center justify-content-between">
+								Date
+								<span class="text-default">{{ lastSoldDate }}</span>
+							</strong>
+							<hr>
+							<strong class="d-flex align-items-center justify-content-between">
+								Total Sales (UGX)
+								<span class="text-default">{{ Number(totalSales).toLocaleString() || 0 }}</span>
+							</strong>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- Row end -->
+			<!-- Row start -->
+			<div class="row gx-3">
 				<div class="col-xxl-12">
 					<div class="card mb-3">
 						<div class="card-header">
@@ -390,7 +382,7 @@ const handleToggleFilterForms = () => {
 										name="paginationSize"
 										class="form-select form-select-sm"
 										v-model="paginationSize"
-										@change="fetchSales"
+										@change="fetchReportDailySales"
 									>
 										<option
 											v-for="size in paginationSizeOptions"
@@ -470,15 +462,16 @@ const handleToggleFilterForms = () => {
 									<thead>
 										<tr>
 											<th scope="col">#</th>
-											<th scope="col">BATCH NUMBER</th>
-											<th scope="col">CUSTOMER NAME</th>
-											<th scope="col">PHONE NUMBER</th>
+											<th scope="col">PRODUCT</th>
+											<th scope="col">BRAND</th>
+											<th scope="col">MEASUREMENT</th>
+											<th scope="col">BATCH NO</th>
+											<th scope="col">QTY</th>
+											<th scope="col">UNIT PRICE</th>
 											<th scope="col">DISCOUNT</th>
 											<th scope="col">TOTAL AMOUNT</th>
-											<th scope="col">PAYMENT METHOD</th>
-											<th scope="col">CREATED BY</th>
+											<th scope="col">ISSUED BY</th>
 											<th scope="col">DATE</th>
-											<th scope="col">ACTIONS</th>
 											<th scope="col" class="control-column"></th>
 										</tr>
 									</thead>
@@ -487,69 +480,20 @@ const handleToggleFilterForms = () => {
 											<th scope="row">
 												{{ (pagination.currentPage - 1) * paginationSize + index + 1 }}
 											</th>
+											<td>{{ log.product.name || "N/A" }}</td>
+											<td>{{ log.brand.name || "N/A" }}</td>
+											<td>{{ log.measurement.name || "N/A" }}</td>
 											<td>{{ log.batch_number || "N/A" }}</td>
-											<td>{{ log.customer_name || "N/A" }}</td>
-											<td>{{ log.customer_phone || "N/A" }}</td>
-											<td>{{ Number(log.discount).toLocaleString() || 0 }}</td>
-											<td>{{ Number(log.total_amount).toLocaleString() || 0 }}</td>
-											<td>{{ log.payment_method || "N/A" }}</td>
+											<td class="text-end">{{ Number(log.quantity).toLocaleString() || 0 }}</td>
+											<td class="text-end">{{ Number(log.unit_price).toLocaleString() || 0 }}</td>
+											<td class="text-end">{{ Number(log.sale.discount).toLocaleString() || 0 }}%</td>
+											<td class="text-end">{{ Number(log.total_price).toLocaleString() || 0 }}</td>
 											<td>{{ log.user ? log.user.name : "N/A" }}</td>
 											<td>{{ parseDate(log.created_at) || "N/A" }}</td>
-											<td>
-												<div class="d-flex">
-													<div class="dropdown" v-if="menuAccess.salesInvoice || menuAccess.salesReceipt">
-														<button
-															type="button"
-															class="btn btn-success btn-sm dropdown-toggle"
-															data-bs-toggle="dropdown"
-														>
-															Actions
-														</button>
-														<ul
-															class="dropdown-menu dropdown-menu-end"
-															style="right: 0; left: auto"
-														>
-															<li
-																v-if="menuAccess.salesReceipt"
-															>
-																<RouterLink
-																	class="dropdown-item"
-																	:to="{
-																		name: 'SalesReceipt',
-																		params: {
-																			id: log.id,
-																		},
-																	}"
-																	>Receipt
-																</RouterLink>
-															</li>
-															<div
-																v-if="menuAccess.salesInvoice"
-																class="dropdown-divider"
-															></div>
-															<li
-																v-if="menuAccess.salesInvoice"
-															>
-																<RouterLink
-																	class="dropdown-item"
-																	:to="{
-																		name: 'SalesInvoice',
-																		params: {
-																			id: log.id,
-																		},
-																	}"
-																	>Invoice
-																</RouterLink>
-															</li>
-														</ul>
-													</div>
-													<button type="button" class="btn btn-secondary btn-sm" disabled="true" v-else>Disabled</button>
-												</div>
-											</td>
 											<td class="control-column"></td>
 										</tr>
-										<tr v-if="sales.length === 0">
-											<th colspan="10" class="text-center">
+										<tr v-if="!isLoading && sales.length === 0">
+											<th colspan="12" class="text-center">
 												No records found.
 											</th>
 										</tr>
