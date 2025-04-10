@@ -6,8 +6,8 @@ import { useCustomUtils } from "@/utils/customUtils";
 import { PaginationSizes, PaginationSizeOptions } from "@/enums/paginationSizes";
 import axios from "@/axios";
 import LoadingIndicator from "../../../singles/SpinnerGrow.vue";
-import { useMenuAccess } from "@/permissions"; // Adjust the path as needed
-// Use the menu access composable
+import { useMenuAccess } from "@/permissions";
+
 const { menuAccess } = useMenuAccess();
 const {
 	showFilterForms,
@@ -15,465 +15,304 @@ const {
 	hideFilterForms,
 	parseDate,
 } = useCustomUtils();
-// Access Vuex store
+
 const store = useStore();
 const isLoading = ref(false);
 const searchQuery = ref("");
 const searchExecuted = ref(false);
 const stocks = ref([]);
+const reportStart = ref("");
+const reportEnd = ref("");
+const totalStocks = ref("0");
 const pagination = ref({ currentPage: 1, lastPage: 1, total: 0 });
 const paginationSize = ref(PaginationSizes.SMALL);
 const paginationSizeOptions = PaginationSizeOptions;
-const filterStartDate = ref(""); // Bind the start date
-const filterEndDate = ref(""); // Bind the end date
+const filterDateRange = ref("");
+const reportType = ref("daily");
 const alerts = reactive({
 	success: "",
 	error: "",
 });
-// Helper function to retrieve token
+
 const getToken = () => {
 	const token = localStorage.getItem("token");
 	if (!token) throw new Error("No token found");
 	return token;
 };
 
-// Centralized error handling function
 const handleError = (error, alertField = "error") => {
 	alerts[alertField] = error.response?.data?.message || "An error occurred. Please try again later.";
 	console.error("API Error:", error);
 };
-// Function to delete a stock with confirmation
-const deleteStock = async (stockId) => {
-	const confirmed = window.confirm("Are you sure you want to delete this stock?");
-	if (confirmed) {
-		alerts.success = "";
-		alerts.error = "";
-		isLoading.value = true; // Start loading
-		try {
-			// Retrieve the token from local storage
-			const token = getToken();
 
-			// Make delete request to backend
-			const response = await axios.delete(`/stockdelete/${stockId}`, {
-				headers: {
-					Authorization: `Bearer ${token}`, // Include the token in the Authorization header
-				},
-			});
-
-			if (response.data.success) {
-				// Refresh stocks list after deletion
-				fetchStocks();
-				alerts.success = "stock deleted successfully!";
-			}
-		} catch (error) {
-			handleError(error); // Handle error using centralized error handle
-		} finally {
-			isLoading.value = false; // Stop loading
-		}
-	}
-};
-// Track selected stocks for mass delete
-const selectedStocks = ref([]);
-
-// Toggle stock selection
-const toggleStockSelection = (stockId) => {
-	if (selectedStocks.value.includes(stockId)) {
-		selectedStocks.value = selectedStocks.value.filter((id) => id !== stockId);
-	} else {
-		selectedStocks.value.push(stockId);
-	}
-};
-
-// Toggle all stocks selection
-const toggleAllSingleStocks = (event) => {
-	if (event.target.checked) {
-		selectedStocks.value = stocks.value.map((stock) => stock.id);
-	} else {
-		selectedStocks.value = [];
-	}
-};
-
-// Mass delete function
-const deleteSelectedStocks = async () => {
-	const confirmed = window.confirm(
-		`Are you sure you want to delete ${selectedStocks.value.length} stock(s)?`
-	);
-	if (confirmed && selectedStocks.value.length > 0) {
-		alerts.success = "";
-		alerts.error = "";
-		isLoading.value = true; // Start loading
-
-		try {
-			const token = getToken();
-
-			// Updated API URL and request body key
-			const response = await axios.delete(`/stocksdelete`, {
-				headers: {
-					Authorization: `Bearer ${token}`, // Include the token in the Authorization header
-				},
-				data: {
-					ids: selectedStocks.value, // Update to match Laravel's expected key 'ids'
-				},
-			});
-
-			if (response.data.success) {
-				// Refresh stocks list after deletion
-				fetchStocks();
-				alerts.success = `${selectedStocks.value.length} stock(s) deleted successfully!`;
-				selectedStocks.value = []; // Clear selected stocks after deletion
-			}
-		} catch (error) {
-			handleError(error); // Handle error using centralized error handle
-		} finally {
-			isLoading.value = false; // Stop loading
-		}
-	}
-};
-
-const fetchStocks = async (page = 1) => {
-    isLoading.value = true; // Start loading
-    try {
-        // Retrieve the token from local storage
-        const token = getToken();
-
-        const response = await axios.get("/stocklist", {
-            headers: {
-                Authorization: `Bearer ${token}`, // Include the token in the Authorization header
-            },
-            params: {
-                pagination_size: paginationSize.value,
-                page: page,
-                search: searchQuery.value,
-                startDate: filterStartDate.value,
-                endDate: filterEndDate.value,
-            },
-        });
-
-        if (response.status === 200) {
-            // Assign the data to stocks
-            stocks.value = response.data.data;
-
-            // Update the pagination object
-            pagination.value = {
-                currentPage: response.data.current_page, // Access current_page from the root level
-                lastPage: response.data.last_page,       // Access last_page from the root level
-                total: response.data.total,              // Access total from the root level
-            };
-        } else {
-            console.error("Error fetching stock logs:", response.statusText);
-        }
-    } catch (error) {
-        handleError(error); // Handle error using centralized error handle
-    } finally {
-        isLoading.value = false; // Stop loading
-    }
-};
-const exportFile = async (fileType) => {
-	// Set loading state to true while the file is being prepared
+const fetchReportStock = async (page = 1) => {
 	isLoading.value = true;
+	try {
+		const token = getToken();
 
-	// Define URL endpoints for different file types
+		const response = await axios.get("/reportstocklist", {
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+			params: {
+				pagination_size: paginationSize.value,
+				page: page,
+				search: searchQuery.value,
+				date_range: filterDateRange.value,
+				report_type: reportType.value,
+			},
+		});
+
+		if (response.status === 200) {
+			stocks.value = response.data.data?.data || [];
+			reportStart.value = response.data.report_start;
+			reportEnd.value = response.data.report_end;
+			totalStocks.value = response.data.total_stocks;
+
+			pagination.value = {
+				currentPage: response.data.data.current_page,
+				lastPage: response.data.data.last_page,
+				total: response.data.data.total,
+			};
+		} else {
+			console.error("Error fetching stock report:", response.statusText);
+		}
+	} catch (error) {
+		handleError(error);
+	} finally {
+		isLoading.value = false;
+	}
+};
+
+const exportFile = async (fileType) => {
+	isLoading.value = true;
 	const urls = {
-		xlsx: "/stockxlsx",
-		csv: "/stockcsv",
+		xlsx: "/reportstockxlsx",
+		csv: "/reportstockcsv",
 	};
 
 	try {
-		// Retrieve the authentication token from local storage
 		const token = getToken();
-
-		// Make an HTTP GET request to fetch the file
 		const response = await axios.get(urls[fileType], {
 			headers: { Authorization: `Bearer ${token}` },
-			responseType: "blob", // Set response type to 'blob' to handle file downloads
+			responseType: "blob",
+			params: {
+				date_range: filterDateRange.value,
+				report_type: reportType.value
+			}
 		});
 
-		// Generate filename with the current date
-		const today = new Date().toISOString().split("T")[0].replace(/-/g, "_"); // Format: yyyy_mm_dd
-		const filename = `${today}_stocks.${fileType}`;
+		const today = new Date().toISOString().split("T")[0].replace(/-/g, "_");
+		const filename = `${today}_reportstock.${fileType}`;
 
-		// Extract filename from Content-Disposition header if available
 		const disposition = response.headers["content-disposition"];
 		const filenameMatch = disposition
 			? disposition.match(/filename="([^"]*)"/)
 			: null;
 		const finalFilename = filenameMatch ? filenameMatch[1] : filename;
 
-		// Create a URL for the blob and trigger a download
 		const urlBlob = window.URL.createObjectURL(new Blob([response.data]));
 		const link = document.createElement("a");
 		link.href = urlBlob;
-		link.download = finalFilename; // Set the file name for download
+		link.download = finalFilename;
 		document.body.appendChild(link);
-		link.click(); // Programmatically click the link to trigger download
-		link.remove(); // Remove the link from the DOM
-		window.URL.revokeObjectURL(urlBlob); // Clean up the object URL
+		link.click();
+		link.remove();
+		window.URL.revokeObjectURL(urlBlob);
 	} catch (error) {
-		// Log any errors that occur during the file export
 		console.error(`Error exporting ${fileType} file:`, error);
 	} finally {
-		// Reset loading state after the file has been processed
 		isLoading.value = false;
 	}
 };
 
-// Methods to trigger export
 const exportXlsx = () => exportFile("xlsx");
 const exportCsv = () => exportFile("csv");
 
-// Initial data fetch
 onMounted(() => {
 	new Podtable("#table", {
 		keepCell: [9],
 	});
-	fetchStocks();
+	fetchReportStock();
 });
 
-// Search function
 const search = () => {
 	searchExecuted.value = true;
-	fetchStocks();
+	fetchReportStock();
 };
 
-// Clear search and reset
 const clearSearch = () => {
 	searchQuery.value = "";
 	searchExecuted.value = false;
-	fetchStocks();
+	fetchReportStock();
 };
 
-// Reset filters and hide filter forms
 const resetFiltersAndHide = () => {
-	filterStartDate.value = "";
-	filterEndDate.value = "";
-	$(".datepicker-start").val(filterStartDate.value);
-	$(".datepicker-end").val(filterStartDate.value);
+	filterDateRange.value = "";
+	reportType.value = "daily";
+	$(".datepicker").val("");
 	hideFilterForms();
-	fetchStocks(); // Refetch data without filters
+	fetchReportStock();
 };
 
-// Apply filters
 const applyFilters = () => {
-	fetchStocks();
+	fetchReportStock();
 };
 
-// Handle pagination button click
 const handlePaginationClick = (page) => {
 	if (page > 0 && page <= pagination.value.lastPage) {
-		fetchStocks(page);
+		fetchReportStock(page);
 	}
 };
 
-// Watch for pagination size changes and refetch data
 watch(paginationSize, () => {
-	fetchStocks();
+	fetchReportStock();
 });
 
-// Initialize Date Pickers with parseDate function for date formatting
-const initializeDatePickers = () => {
-	// Start Date Picker without pre-filling
-	$(".datepicker-start").daterangepicker(
+const initializeDatePicker = () => {
+	// Destroy any existing instance first
+	if ($(".datepicker").data('daterangepicker')) {
+		$(".datepicker").daterangepicker('destroy');
+	}
+
+	$(".datepicker").daterangepicker(
 		{
-			singleDatePicker: true,
-			autoUpdateInput: false, // Prevents auto-filling with a date
-			locale: { format: "YYYY-MM-DD" },
+			showWeekNumbers: true,
+			singleDatePicker: false,
+			autoUpdateInput: false,
+			locale: {
+				format: "YYYY-MM-DD",
+				firstDay: 1
+			},
+			opens: "left"
 		},
-		function (start) {
-			filterStartDate.value = parseDate(start.format("YYYY-MM-DD"));
-			$(".datepicker-start").val(filterStartDate.value); // Updates input field on selection
+		function (start, end) {
+			filterDateRange.value = `${start.format("YYYY-MM-DD")},${end.format("YYYY-MM-DD")}`;
+			$(".datepicker").val(
+				`${start.format("MMM D, YYYY")} - ${end.format("MMM D, YYYY")}`
+			);
 		}
 	);
 
-	// End Date Picker without pre-filling
-	$(".datepicker-end").daterangepicker(
-		{
-			singleDatePicker: true,
-			autoUpdateInput: false, // Prevents auto-filling with a date
-			locale: { format: "YYYY-MM-DD" },
-		},
-		function (end) {
-			filterEndDate.value = parseDate(end.format("YYYY-MM-DD"));
-			$(".datepicker-end").val(filterEndDate.value); // Updates input field on selection
-		}
-	);
+	// Initialize with current value if exists
+	if (filterDateRange.value) {
+		const dates = filterDateRange.value.split(',');
+		$(".datepicker").val(
+			`${moment(dates[0]).format("MMM D, YYYY")} - ${moment(dates[1]).format("MMM D, YYYY")}`
+		);
+	}
 };
-// Modify the toggle function to include initializeSelect2 as a callback
+
 const handleToggleFilterForms = () => {
 	toggleFilterForms(async () => {
-		await nextTick(); // Wait for DOM update
-		initializeDatePickers();
+		await nextTick();
+		if (reportType.value === 'custom') {
+			initializeDatePicker();
+		}
 	});
 };
+
+watch(reportType, (newVal) => {
+	if (newVal === 'custom') {
+		nextTick(() => {
+			initializeDatePicker();
+		});
+	} else {
+		filterDateRange.value = "";
+	}
+});
 </script>
 
 <template>
 	<section>
-		<!-- App hero header starts -->
 		<div class="app-hero-header d-flex align-items-center">
-			<!-- Breadcrumb start -->
 			<ol class="breadcrumb">
 				<li class="breadcrumb-item">
 					<i class="bi bi-house lh-1 pe-3 me-3 border-end border-dark"></i>
 					<RouterLink to="/home" class="text-decoration-none">Home</RouterLink>
 				</li>
 				<li class="breadcrumb-item">
-					<RouterLink to="/stocklist" class="text-decoration-none"
-						>Stock</RouterLink
-					>
+					<RouterLink to="/reportstocklist" class="text-decoration-none">Reports</RouterLink>
 				</li>
-				<li class="breadcrumb-item text-secondary" aria-current="page">List</li>
+				<li class="breadcrumb-item text-secondary" aria-current="page">Stock Report</li>
 			</ol>
-			<!-- Breadcrumb end -->
 		</div>
-		<!-- App Hero header ends -->
 
-		<!-- App body starts -->
 		<div class="app-body">
-			<!-- Row start -->
-			<div
-				class="row"
-				v-if="
-					menuAccess.stockAdd ||
-					menuAccess.stockBulkDelete ||
-					menuAccess.stockFilter ||
-					menuAccess.stockExport
-				"
-			>
+			<div class="row" v-if="menuAccess.reportStockFilter || menuAccess.reportStockExport">
 				<div class="col-xxl-12">
 					<div class="card mb-3">
 						<div class="card-body p-2">
 							<div class="d-flex justify-content-end my-1 my-lg-0">
 								<div class="d-flex flex-row gap-2">
-									<RouterLink
-										v-if="menuAccess.stockAdd"
-										to="/stockcreate"
-										class="btn btn-sm btn-primary"
-										><i class="fa fa-plus"></i>
-										Create
-									</RouterLink>
-									<!-- Updated Filter button to toggle visibility of filter forms -->
-									<button
-										class="btn btn-sm btn-info"
-										v-if="menuAccess.stockFilter"
-										@click="handleToggleFilterForms"
-									>
+									<button class="btn btn-sm btn-info" v-if="menuAccess.reportStockFilter"
+										@click="handleToggleFilterForms">
 										<i class="fa fa-sliders"></i> Filter
 									</button>
-									<div class="d-flex" v-if="menuAccess.stockExport">
+									<div class="d-flex" v-if="menuAccess.reportStockExport">
 										<div class="dropdown">
-											<button
-												type="button"
-												class="btn btn-success btn-sm dropdown-toggle"
-												data-bs-toggle="dropdown"
-											>
+											<button type="button" class="btn btn-success btn-sm dropdown-toggle"
+												data-bs-toggle="dropdown">
 												<i class="fa fa-download"></i>
 												Export
 											</button>
-											<ul
-												class="dropdown-menu dropdown-menu-end"
-												style="right: 0; left: auto"
-											>
+											<ul class="dropdown-menu dropdown-menu-end" style="right: 0; left: auto">
 												<li>
-													<a
-														class="dropdown-item"
-														href="#"
-														@click.prevent="exportXlsx"
-														>XLSX</a
-													>
+													<a class="dropdown-item" href="#"
+														@click.prevent="exportXlsx">XLSX</a>
 												</li>
 												<div class="dropdown-divider"></div>
 												<li>
-													<a
-														class="dropdown-item"
-														href="#"
-														@click.prevent="exportCsv"
-														>CSV</a
-													>
+													<a class="dropdown-item" href="#" @click.prevent="exportCsv">CSV</a>
 												</li>
 											</ul>
 										</div>
 									</div>
-									<!-- Mass Delete Button -->
-									<button
-										v-if="
-											menuAccess.stockBulkDelete &&
-											selectedStocks.length > 0
-										"
-										class="btn btn-danger btn-sm"
-										@click="deleteSelectedStocks"
-									>
-										<i class="fa fa-trash"></i> Delete
-									</button>
 								</div>
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
-			<!-- Row end -->
-			<!-- Row start -->
+
 			<div v-if="showFilterForms" class="row">
 				<div class="col-xxl-12">
 					<div class="card mb-3">
 						<div class="card-body">
-							<!-- Row start -->
 							<div class="row gx-3">
-								<!-- Startdate filter -->
 								<div class="col-lg-6 col-sm-4 col-12">
 									<div class="mb-3">
-										<label for="filterStartDate" class="form-label"
-											>Start Date</label
-										>
-										<div class="input-group">
-											<input
-												type="text"
-												class="form-control datepicker-start"
-												placeholder="YYYY-MM-DD"
-											/>
-											<span class="input-group-text">
-												<i class="bi bi-calendar4"></i>
-											</span>
-										</div>
+										<label for="reportType" class="form-label">Report Type</label>
+										<select class="form-select" v-model="reportType">
+											<option value="daily">Daily</option>
+											<option value="weekly">Weekly</option>
+											<option value="monthly">Monthly</option>
+											<option value="quarterly">Quarterly</option>
+											<option value="yearly">Yearly</option>
+											<option value="custom">Custom Date Range</option>
+										</select>
 									</div>
 								</div>
-								<!-- Enddate filter -->
-								<div class="col-lg-6 col-sm-4 col-12">
+								<div class="col-lg-6 col-sm-4 col-12" v-if="reportType === 'custom'">
 									<div class="mb-3">
-										<label for="filterEndDate" class="form-label"
-											>End Date</label
-										>
+										<label for="filterDateRange" class="form-label">Date Range</label>
 										<div class="input-group">
-											<input
-												type="text"
-												class="form-control datepicker-end"
-												placeholder="YYYY-MM-DD"
-											/>
+											<input type="text" class="form-control datepicker"
+												placeholder="Select date range" />
 											<span class="input-group-text">
-												<i class="bi bi-calendar4"></i>
+												<i class="bi bi-calendar4-week"></i>
 											</span>
 										</div>
 									</div>
 								</div>
 							</div>
-							<!-- Row end -->
 						</div>
 						<div class="card-footer">
-							<div
-								class="d-flex justify-content-between align-items-center my-2 my-lg-0"
-							>
-								<!-- Cancel and Submit buttons -->
-								<button
-									type="button"
-									class="btn btn-sm btn-danger"
-									@click="resetFiltersAndHide"
-								>
+							<div class="d-flex justify-content-between align-items-center my-2 my-lg-0">
+								<button type="button" class="btn btn-sm btn-danger" @click="resetFiltersAndHide">
 									<i class="fa fa-times"></i> Cancel
 								</button>
-								<button
-									type="button"
-									class="btn btn-sm btn-success"
-									@click="applyFilters"
-								>
+								<button type="button" class="btn btn-sm btn-success" @click="applyFilters">
 									<i class="fa fa-send"></i> Submit
 								</button>
 							</div>
@@ -481,54 +320,47 @@ const handleToggleFilterForms = () => {
 					</div>
 				</div>
 			</div>
-			<!-- Row end -->
-			<!-- Row start -->
+
+			<div class="row gx-3">
+				<div class="col-xl-3 col-sm-6 col-12">
+					<div class="card mb-3">
+						<div class="card-body">
+							<strong class="d-flex align-items-center justify-content-between">
+								Report Period
+								<span class="text-default">{{ reportStart }} to {{ reportEnd }}</span>
+							</strong>
+							<hr>
+							<strong class="d-flex align-items-center justify-content-between">
+								Total Stock (UGX)
+								<span class="text-default">{{ Number(totalStocks).toLocaleString() || 0 }}</span>
+							</strong>
+						</div>
+					</div>
+				</div>
+			</div>
+
 			<div class="row gx-3">
 				<div class="col-xxl-12">
 					<div class="card mb-3">
 						<div class="card-header">
-							<div
-								class="d-flex justify-content-between align-items-center my-2 my-lg-0"
-							>
+							<div class="d-flex justify-content-between align-items-center my-2 my-lg-0">
 								<div class="form-inline">
-									<!-- Dropdown to select pagination size -->
-									<select
-										name="paginationSize"
-										class="form-select form-select-sm"
-										v-model="paginationSize"
-										@change="fetchStocks"
-									>
-										<option
-											v-for="size in paginationSizeOptions"
-											:key="size"
-											:value="size"
-										>
+									<select name="paginationSize" class="form-select form-select-sm"
+										v-model="paginationSize" @change="fetchReportStock">
+										<option v-for="size in paginationSizeOptions" :key="size" :value="size">
 											{{ size }}
 										</option>
 									</select>
 								</div>
 								<div class="input-group mb-0 filter">
-									<input
-										name="searchQuery"
-										type="text"
-										class="form-control form-control-sm"
-										placeholder="Search"
-										v-model="searchQuery"
-									/>
+									<input name="searchQuery" type="text" class="form-control form-control-sm"
+										placeholder="Search" v-model="searchQuery" />
 									<div class="input-group-append">
-										<button
-											class="btn btn-primary btn-sm"
-											type="button"
-											@click="search"
-										>
+										<button class="btn btn-primary btn-sm" type="button" @click="search">
 											<i class="fa fa-search"></i>
 										</button>
-										<button
-											class="btn btn-secondary btn-sm"
-											type="button"
-											@click="clearSearch"
-											v-if="searchExecuted"
-										>
+										<button class="btn btn-secondary btn-sm" type="button" @click="clearSearch"
+											v-if="searchExecuted">
 											<i class="fa fa-times"></i>
 										</button>
 									</div>
@@ -536,52 +368,26 @@ const handleToggleFilterForms = () => {
 							</div>
 						</div>
 						<div class="card-body">
-							<!-- Success Alert -->
-							<div
-								v-if="alerts.success"
+							<div v-if="alerts.success"
 								class="alert border border-success alert-dismissible fade show text-success"
-								role="alert"
-							>
+								role="alert">
 								{{ alerts.success }}
-								<button
-									type="button"
-									class="btn-close"
-									data-bs-dismiss="alert"
-									aria-label="Close"
-								></button>
+								<button type="button" class="btn-close" data-bs-dismiss="alert"
+									aria-label="Close"></button>
 							</div>
 
-							<!-- Error Alert -->
-							<div
-								v-if="alerts.error"
-								class="alert border border-danger alert-dismissible fade show text-danger"
-								role="alert"
-							>
+							<div v-if="alerts.error"
+								class="alert border border-danger alert-dismissible fade show text-danger" role="alert">
 								{{ alerts.error }}
-								<button
-									type="button"
-									class="btn-close"
-									data-bs-dismiss="alert"
-									aria-label="Close"
-								></button>
+								<button type="button" class="btn-close" data-bs-dismiss="alert"
+									aria-label="Close"></button>
 							</div>
-							<!-- Table Container with relative positioning -->
+
 							<div class="position-relative">
-								<!-- Display the LoadingIndicator component -->
 								<LoadingIndicator :isLoading="isLoading" />
-								<table
-									id="table"
-									class="table align-middle table-hover m-0"
-								>
+								<table id="table" class="table align-middle table-hover m-0">
 									<thead>
 										<tr>
-											<th scope="col">
-												<!-- Header checkbox to select/unselect all -->
-												<input
-													type="checkbox"
-													@change="toggleAllSingleStocks($event)"
-												/>
-											</th>
 											<th scope="col">#</th>
 											<th scope="col">PRODUCT</th>
 											<th scope="col">BRAND</th>
@@ -589,24 +395,14 @@ const handleToggleFilterForms = () => {
 											<th scope="col">QTY</th>
 											<th scope="col">UNIT PRICE</th>
 											<th scope="col">TOTAL</th>
-											<th scope="col">SALE PRICE</th>
 											<th scope="col">SUPPLIER</th>
-											<th scope="col">CREATED BY</th>
+											<th scope="col">RECORDED BY</th>
 											<th scope="col">DATE</th>
-											<th scope="col">ACTIONS</th>
 											<th scope="col" class="control-column"></th>
 										</tr>
 									</thead>
 									<tbody>
 										<tr v-for="(log, index) in stocks" :key="index">
-											<td>
-												<input
-													type="checkbox"
-													:value="log.id"
-													@change="toggleStockSelection(log.id)"
-													:checked="selectedStocks.includes(log.id)"
-												/>
-											</td>
 											<th scope="row">
 												{{ (pagination.currentPage - 1) * paginationSize + index + 1 }}
 											</th>
@@ -616,96 +412,24 @@ const handleToggleFilterForms = () => {
 											<td>{{ log.quantity || 0 }}</td>
 											<td class="text-end">{{ Number(log.unit_price).toLocaleString() || 0 }}</td>
 											<td class="text-end">{{ Number(log.total_cost).toLocaleString() || 0 }}</td>
-											<td class="text-end">{{ Number(log.sale_price).toLocaleString() || 0 }}</td>
 											<td>{{ log.supplier.name || "N/A" }}</td>
 											<td>{{ log.created_by ? log.created_by.name : "N/A" }}</td>
 											<td>{{ parseDate(log.stock_date) || "N/A" }}</td>
-											<td>
-												<div class="d-flex">
-													<div class="dropdown">
-														<button
-															type="button"
-															class="btn btn-success btn-sm dropdown-toggle"
-															data-bs-toggle="dropdown"
-														>
-															Actions
-														</button>
-														<ul
-															class="dropdown-menu dropdown-menu-end"
-															style="right: 0; left: auto"
-														>
-															<li>
-																<RouterLink
-																	class="dropdown-item"
-																	:to="{
-																		name: 'StockShow',
-																		params: {
-																			id: log.id,
-																		},
-																	}"
-																	>View
-																</RouterLink>
-															</li>
-															<div
-																v-if="
-																	menuAccess.stockEdit
-																"
-																class="dropdown-divider"
-															></div>
-															<li
-																v-if="menuAccess.stockEdit"
-															>
-																<RouterLink
-																	class="dropdown-item"
-																	:to="{
-																		name:
-																			'StockUpdate',
-																		params: {
-																			id: log.id,
-																		},
-																	}"
-																>
-																	Edit</RouterLink
-																>
-															</li>
-															<div
-																v-if="
-																	menuAccess.stockDelete
-																"
-																class="dropdown-divider"
-															></div>
-															<li
-																v-if="menuAccess.stockDelete"
-															>
-																<a
-																	class="dropdown-item"
-																	href="#"
-																	@click.prevent="deleteStock(log.id)"
-																	>Delete</a
-																>
-															</li>
-														</ul>
-													</div>
-												</div>
-											</td>
 											<td class="control-column"></td>
 										</tr>
-										<tr v-if="stocks.length === 0">
-											<th colspan="13" class="text-center">
+										<tr v-if="!isLoading && stocks.length === 0">
+											<th colspan="11" class="text-center">
 												No records found.
 											</th>
 										</tr>
 									</tbody>
 								</table>
-								<!-- Pagination start -->
-								<div
-									v-if="pagination.total > 0"
-									class="d-flex justify-content-between mt-2"
-								>
+
+								<div v-if="pagination.total > 0" class="d-flex justify-content-between mt-2">
 									<div>
 										{{
-											`Showing ${
-												pagination.currentPage > 1 ? (pagination.currentPage - 1) * paginationSize + 1 : 1
+											`Showing ${pagination.currentPage > 1 ? (pagination.currentPage - 1) *
+												paginationSize + 1 : 1
 											} to ${Math.min(
 												pagination.currentPage * paginationSize,
 												pagination.total
@@ -714,89 +438,56 @@ const handleToggleFilterForms = () => {
 									</div>
 									<nav aria-label="Page navigation example">
 										<ul class="pagination">
-											<li
-												class="page-item"
-												v-if="pagination.currentPage > 1"
-											>
-												<button
-													class="page-link btn-sm"
-													@click="handlePaginationClick(1)"
-												>
+											<li class="page-item" v-if="pagination.currentPage > 1">
+												<button class="page-link btn-sm" @click="handlePaginationClick(1)">
 													&laquo;&laquo;
 												</button>
 											</li>
-											<li
-												class="page-item"
-												v-if="pagination.currentPage > 1"
-											>
-												<button
-													class="page-link btn-sm"
-													@click="handlePaginationClick(pagination.currentPage - 1)"
-												>
+											<li class="page-item" v-if="pagination.currentPage > 1">
+												<button class="page-link btn-sm"
+													@click="handlePaginationClick(pagination.currentPage - 1)">
 													&laquo;
 												</button>
 											</li>
 
-											<!-- Display up to five numbered buttons with an interval of 5 -->
 											<template v-if="pagination.lastPage > 1">
 												<template
-													v-for="pageNumber in Math.min(pagination.lastPage, pagination.currentPage + 4)"
-												>
-													<li
-														:key="pageNumber"
-														class="page-item"
-														:class="{
-															active:
-																pageNumber === pagination.currentPage,
-														}"
-														v-if="
-															pageNumber >= pagination.currentPage && pageNumber <= pagination.currentPage + 3"
-													>
-														<button
-															class="page-link btn-sm"
-															@click="handlePaginationClick(pageNumber)"
-														>
+													v-for="pageNumber in Math.min(pagination.lastPage, pagination.currentPage + 4)">
+													<li :key="pageNumber" class="page-item" :class="{
+														active: pageNumber === pagination.currentPage,
+													}" v-if="pageNumber >= pagination.currentPage && pageNumber <= pagination.currentPage + 3">
+														<button class="page-link btn-sm"
+															@click="handlePaginationClick(pageNumber)">
 															{{ pageNumber }}
 														</button>
 													</li>
 												</template>
 											</template>
 
-											<li
-												class="page-item"
-												v-if="pagination.currentPage < pagination.lastPage"
-											>
-												<button
-													class="page-link btn-sm"
-													@click="handlePaginationClick(pagination.currentPage + 1)"
-												>
+											<li class="page-item" v-if="pagination.currentPage < pagination.lastPage">
+												<button class="page-link btn-sm"
+													@click="handlePaginationClick(pagination.currentPage + 1)">
 													&raquo;
 												</button>
 											</li>
-											<li
-												class="page-item"
-												v-if="pagination.currentPage < pagination.lastPage"
-											>
-												<button
-													class="page-link btn-sm"
-													@click="handlePaginationClick(pagination.lastPage)"
-												>
+											<li class="page-item" v-if="pagination.currentPage < pagination.lastPage">
+												<button class="page-link btn-sm"
+													@click="handlePaginationClick(pagination.lastPage)">
 													&raquo;&raquo;
 												</button>
 											</li>
 										</ul>
 									</nav>
 								</div>
-								<!-- Pagination end -->
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
-			<!-- Row end -->
 		</div>
-		<!-- App body ends -->
 	</section>
 </template>
 
-<style scoped></style>
+<style scoped>
+/* Add any custom styles here */
+</style>

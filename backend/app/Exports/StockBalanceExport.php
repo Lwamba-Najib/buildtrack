@@ -11,7 +11,7 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithCustomStartCell;
 
-class StockLevelExport implements FromCollection, WithHeadings, WithCustomStartCell, WithEvents
+class StockBalanceExport implements FromCollection, WithHeadings, WithCustomStartCell, WithEvents
 {
     /**
     * @return \Illuminate\Support\Collection

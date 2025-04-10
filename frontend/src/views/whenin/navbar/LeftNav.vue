@@ -475,9 +475,9 @@ const isSalesListActive = computed(() => {
 						</li>						
 						<li
 							v-if="
-								menuAccess.reportStockList || menuAccess.reportStockBalanceList || menuAccess.reportLowStockAlertList || menuAccess.reportStockValuationList || menuAccess.reportStockAgingList
+								menuAccess.reportStockList || menuAccess.reportStockBalanceList || menuAccess.reportStockLowAlertList || menuAccess.reportStockAgingList
 							" 
-						 	:class="{'active': isActive(['/reportstocklist', '/reportstockbalancelist', '/reportlowstockalertlist', '/reportstockvaluationlist', '/reportstockaginglist'])}">
+						 	:class="{'active': isActive(['/reportstocklist', '/reportstockbalancelist', '/reportstocklowalertlist', '/reportstockaginglist'])}">
 							<a href="#!">
 								Inventory Reports
 								<i class="bi bi-chevron-right"></i>
@@ -505,25 +505,14 @@ const isSalesListActive = computed(() => {
 									</RouterLink>
 								</li>
 								
-								<li v-if="menuAccess.reportLowStockAlertList">
+								<li v-if="menuAccess.reportStockLowAlertList">
 									<RouterLink
-										to="/reportlowstockalertlist"
+										to="/reportstocklowalertlist"
 										:class="{
-											'active-sub': isActive(['/reportlowstockalertlist']),
+											'active-sub': isActive(['/reportstocklowalertlist']),
 										}"
 									>
-										Low Stock Alerts
-									</RouterLink>
-								</li>
-								
-								<li v-if="menuAccess.reportStockValuationList">
-									<RouterLink
-										to="/reportstockvaluationlist"
-										:class="{
-											'active-sub': isActive(['/reportstockvaluationlist']),
-										}"
-									>
-										Inventory Valuation
+										Stock Low Alerts
 									</RouterLink>
 								</li>
 								

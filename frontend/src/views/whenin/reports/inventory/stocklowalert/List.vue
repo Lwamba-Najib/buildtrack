@@ -10,9 +10,6 @@ import { useMenuAccess } from "@/permissions";
 
 const { menuAccess } = useMenuAccess();
 const {
-	showFilterForms,
-	toggleFilterForms,
-	hideFilterForms,
 	parseDate,
 } = useCustomUtils();
 
@@ -21,14 +18,10 @@ const isLoading = ref(false);
 const searchQuery = ref("");
 const searchExecuted = ref(false);
 const stocks = ref([]);
-const reportStart = ref("");
-const reportEnd = ref("");
 const totalStocks = ref("0");
 const pagination = ref({ currentPage: 1, lastPage: 1, total: 0 });
 const paginationSize = ref(PaginationSizes.SMALL);
 const paginationSizeOptions = PaginationSizeOptions;
-const filterDateRange = ref("");
-const reportType = ref("daily");
 const alerts = reactive({
 	success: "",
 	error: "",
@@ -45,12 +38,12 @@ const handleError = (error, alertField = "error") => {
 	console.error("API Error:", error);
 };
 
-const fetchReportStockBalance = async (page = 1) => {
+const fetchReportStockLowAlert = async (page = 1) => {
 	isLoading.value = true;
 	try {
 		const token = getToken();
 
-		const response = await axios.get("/reportstockbalancelist", {
+		const response = await axios.get("/reportstocklowalertlist", {
 			headers: {
 				Authorization: `Bearer ${token}`,
 			},
@@ -58,15 +51,11 @@ const fetchReportStockBalance = async (page = 1) => {
 				pagination_size: paginationSize.value,
 				page: page,
 				search: searchQuery.value,
-				date_range: filterDateRange.value,
-				report_type: reportType.value,
 			},
 		});
 
 		if (response.status === 200) {
 			stocks.value = response.data.data?.data || [];
-			reportStart.value = response.data.report_start;
-			reportEnd.value = response.data.report_end;
 			totalStocks.value = response.data.total_stocks;
 
 			pagination.value = {
@@ -75,7 +64,7 @@ const fetchReportStockBalance = async (page = 1) => {
 				total: response.data.data.total,
 			};
 		} else {
-			console.error("Error fetching stock balance report:", response.statusText);
+			console.error("Error fetching stock low alert report:", response.statusText);
 		}
 	} catch (error) {
 		handleError(error);
@@ -87,8 +76,8 @@ const fetchReportStockBalance = async (page = 1) => {
 const exportFile = async (fileType) => {
 	isLoading.value = true;
 	const urls = {
-		xlsx: "/reportstockbalancexlsx",
-		csv: "/reportstockbalancecsv",
+		xlsx: "/reportstocklowalertxlsx",
+		csv: "/reportstocklowalertcsv",
 	};
 
 	try {
@@ -96,14 +85,10 @@ const exportFile = async (fileType) => {
 		const response = await axios.get(urls[fileType], {
 			headers: { Authorization: `Bearer ${token}` },
 			responseType: "blob",
-			params: {
-				date_range: filterDateRange.value,
-				report_type: reportType.value
-			}
 		});
 
 		const today = new Date().toISOString().split("T")[0].replace(/-/g, "_");
-		const filename = `${today}_reportstockbalance.${fileType}`;
+		const filename = `${today}_reportstocklowalert.${fileType}`;
 
 		const disposition = response.headers["content-disposition"];
 		const filenameMatch = disposition
@@ -133,93 +118,28 @@ onMounted(() => {
 	new Podtable("#table", {
 		keepCell: [9],
 	});
-	fetchReportStockBalance();
+	fetchReportStockLowAlert();
 });
 
 const search = () => {
 	searchExecuted.value = true;
-	fetchReportStockBalance();
+	fetchReportStockLowAlert();
 };
 
 const clearSearch = () => {
 	searchQuery.value = "";
 	searchExecuted.value = false;
-	fetchReportStockBalance();
-};
-
-const resetFiltersAndHide = () => {
-	filterDateRange.value = "";
-	reportType.value = "daily";
-	$(".datepicker").val("");
-	hideFilterForms();
-	fetchReportStockBalance();
-};
-
-const applyFilters = () => {
-	fetchReportStockBalance();
+	fetchReportStockLowAlert();
 };
 
 const handlePaginationClick = (page) => {
 	if (page > 0 && page <= pagination.value.lastPage) {
-		fetchReportStockBalance(page);
+		fetchReportStockLowAlert(page);
 	}
 };
 
 watch(paginationSize, () => {
-	fetchReportStockBalance();
-});
-
-const initializeDatePicker = () => {
-	// Destroy any existing instance first
-	if ($(".datepicker").data('daterangepicker')) {
-		$(".datepicker").daterangepicker('destroy');
-	}
-
-	$(".datepicker").daterangepicker(
-		{
-			showWeekNumbers: true,
-			singleDatePicker: false,
-			autoUpdateInput: false,
-			locale: {
-				format: "YYYY-MM-DD",
-				firstDay: 1
-			},
-			opens: "left"
-		},
-		function (start, end) {
-			filterDateRange.value = `${start.format("YYYY-MM-DD")},${end.format("YYYY-MM-DD")}`;
-			$(".datepicker").val(
-				`${start.format("MMM D, YYYY")} - ${end.format("MMM D, YYYY")}`
-			);
-		}
-	);
-
-	// Initialize with current value if exists
-	if (filterDateRange.value) {
-		const dates = filterDateRange.value.split(',');
-		$(".datepicker").val(
-			`${moment(dates[0]).format("MMM D, YYYY")} - ${moment(dates[1]).format("MMM D, YYYY")}`
-		);
-	}
-};
-
-const handleToggleFilterForms = () => {
-	toggleFilterForms(async () => {
-		await nextTick();
-		if (reportType.value === 'custom') {
-			initializeDatePicker();
-		}
-	});
-};
-
-watch(reportType, (newVal) => {
-	if (newVal === 'custom') {
-		nextTick(() => {
-			initializeDatePicker();
-		});
-	} else {
-		filterDateRange.value = "";
-	}
+	fetchReportStockLowAlert();
 });
 
 // Method to determine stock status
@@ -243,24 +163,20 @@ const getStockStatus = (balance, minStockLevel) => {
 					<RouterLink to="/home" class="text-decoration-none">Home</RouterLink>
 				</li>
 				<li class="breadcrumb-item">
-					<RouterLink to="/reportstockbalancelist" class="text-decoration-none">Reports</RouterLink>
+					<RouterLink to="/reportstocklowalertlist" class="text-decoration-none">Reports</RouterLink>
 				</li>
-				<li class="breadcrumb-item text-secondary" aria-current="page">Stock Balance Report</li>
+				<li class="breadcrumb-item text-secondary" aria-current="page">Stock Low Alert Report</li>
 			</ol>
 		</div>
 
 		<div class="app-body">
-			<div class="row" v-if="menuAccess.reportStockBalanceFilter || menuAccess.reportStockBalanceExport">
+			<div class="row" v-if="menuAccess.reportStockLowAlertExport">
 				<div class="col-xxl-12">
 					<div class="card mb-3">
 						<div class="card-body p-2">
 							<div class="d-flex justify-content-end my-1 my-lg-0">
 								<div class="d-flex flex-row gap-2">
-									<button class="btn btn-sm btn-info" v-if="menuAccess.reportStockBalanceFilter"
-										@click="handleToggleFilterForms">
-										<i class="fa fa-sliders"></i> Filter
-									</button>
-									<div class="d-flex" v-if="menuAccess.reportStockBalanceExport">
+									<div class="d-flex" v-if="menuAccess.reportStockLowAlertExport">
 										<div class="dropdown">
 											<button type="button" class="btn btn-success btn-sm dropdown-toggle"
 												data-bs-toggle="dropdown">
@@ -286,61 +202,10 @@ const getStockStatus = (balance, minStockLevel) => {
 				</div>
 			</div>
 
-			<div v-if="showFilterForms" class="row">
-				<div class="col-xxl-12">
-					<div class="card mb-3">
-						<div class="card-body">
-							<div class="row gx-3">
-								<div class="col-lg-6 col-sm-4 col-12">
-									<div class="mb-3">
-										<label for="reportType" class="form-label">Report Type</label>
-										<select class="form-select" v-model="reportType">
-											<option value="daily">Daily</option>
-											<option value="weekly">Weekly</option>
-											<option value="monthly">Monthly</option>
-											<option value="quarterly">Quarterly</option>
-											<option value="yearly">Yearly</option>
-											<option value="custom">Custom Date Range</option>
-										</select>
-									</div>
-								</div>
-								<div class="col-lg-6 col-sm-4 col-12" v-if="reportType === 'custom'">
-									<div class="mb-3">
-										<label for="filterDateRange" class="form-label">Date Range</label>
-										<div class="input-group">
-											<input type="text" class="form-control datepicker"
-												placeholder="Select date range" />
-											<span class="input-group-text">
-												<i class="bi bi-calendar4-week"></i>
-											</span>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-						<div class="card-footer">
-							<div class="d-flex justify-content-between align-items-center my-2 my-lg-0">
-								<button type="button" class="btn btn-sm btn-danger" @click="resetFiltersAndHide">
-									<i class="fa fa-times"></i> Cancel
-								</button>
-								<button type="button" class="btn btn-sm btn-success" @click="applyFilters">
-									<i class="fa fa-send"></i> Submit
-								</button>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-
 			<div class="row gx-3">
 				<div class="col-xl-3 col-sm-6 col-12">
 					<div class="card mb-3">
 						<div class="card-body">
-							<strong class="d-flex align-items-center justify-content-between">
-								Report Period
-								<span class="text-default">{{ reportStart }} to {{ reportEnd }}</span>
-							</strong>
-							<hr>
 							<strong class="d-flex align-items-center justify-content-between">
 								Total Stock (UGX)
 								<span class="text-default">{{ Number(totalStocks).toLocaleString() || 0 }}</span>
@@ -357,7 +222,7 @@ const getStockStatus = (balance, minStockLevel) => {
 							<div class="d-flex justify-content-between align-items-center my-2 my-lg-0">
 								<div class="form-inline">
 									<select name="paginationSize" class="form-select form-select-sm"
-										v-model="paginationSize" @change="fetchReportStockBalance">
+										v-model="paginationSize" @change="fetchReportStockLowAlert">
 										<option v-for="size in paginationSizeOptions" :key="size" :value="size">
 											{{ size }}
 										</option>
@@ -404,8 +269,8 @@ const getStockStatus = (balance, minStockLevel) => {
 											<th scope="col">BATCH NUMBER</th>
 											<th scope="col">BRAND</th>
 											<th scope="col">UNIT OF MEASUREMENT</th>
+											<th scope="col">UNIT PRICE</th>
 											<th scope="col">QTY IN SOCK</th>
-											<th scope="col">QTY SOLD</th>
 											<th scope="col">STATUS</th>
 											<th scope="col" class="control-column"></th>
 										</tr>
@@ -419,8 +284,8 @@ const getStockStatus = (balance, minStockLevel) => {
 											<td>{{ log.batch_number || "N/A" }}</td>
 											<td>{{ log.brand.name || "N/A" }}</td>
 											<td>{{ log.measurement.name || "N/A" }}</td>
+											<td class="text-end">{{ Number(log.unit_price).toLocaleString() || 0 }}</td>
 											<td class="text-end">{{ Number(log.balance).toLocaleString() || 0 }}</td>
-											<td class="text-end">{{ Number(log.total_sold).toLocaleString() || 0 }}</td>
 											<td>
 												<span :class="getStockStatus(log.balance, log.min_stock_level).class" class="badge">
 													{{ getStockStatus(log.balance, log.min_stock_level).text }}

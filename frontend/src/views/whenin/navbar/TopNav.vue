@@ -35,7 +35,7 @@ const handleLogout = async (isVoluntary = true) => {
         console.error("Logout failed:", error);
 
         // Handle backend unreachable or other errors
-        alert("The backend is currently unreachable. You will be redirected to the login page.");
+        // alert("The backend is currently unreachable. You will be redirected to the login page.");
 
         // Clear local state and localStorage to ensure the user is logged out
         store.commit("WhenOut");
@@ -142,51 +142,6 @@ onMounted(() => {
 
 			<!-- App header actions start -->
 			<div class="header-actions col">
-				<div class="d-lg-flex d-none">
-					<div class="dropdown border-start">
-						<a
-							class="dropdown-toggle d-flex px-3 py-4 position-relative"
-							href="#!"
-							role="button"
-							data-bs-toggle="dropdown"
-							aria-expanded="false"
-						>
-							<i class="bi bi-bell fs-4 lh-1 text-secondary"></i>
-							<span class="count-label info"></span>
-						</a>
-						<div class="dropdown-menu dropdown-menu-end shadow-lg">
-							<h5 class="fw-semibold px-3 py-2 text-primary">Updates</h5>
-							<div class="dropdown-item">
-								<div class="d-flex py-2 border-bottom">
-									<div
-										class="icon-box md bg-success rounded-circle me-3"
-									>
-										<span class="fw-bold text-white">ST</span>
-									</div>
-									<div class="m-0">
-										<h6 class="mb-1 fw-semibold">Single Transfer</h6>
-										<p class="mb-1">
-											You have pending single transfers.
-										</p>
-									</div>
-								</div>
-								<div class="d-flex py-2 border-bottom">
-									<div
-										class="icon-box md bg-success rounded-circle me-3"
-									>
-										<span class="fw-bold text-white">DT</span>
-									</div>
-									<div class="m-0">
-										<h6 class="mb-1 fw-semibold">bulk Transfer</h6>
-										<p class="mb-1">
-											You have pending Bulk transfers.
-										</p>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
 				<div class="dropdown ms-2">
 					<a
 						id="userSettings"

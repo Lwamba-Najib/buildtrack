@@ -25,25 +25,17 @@ import { RouterLink } from "vue-router";
 				<div class="col-xl-3 col-sm-6 col-12">
 					<div class="card mb-3">
 						<div class="card-body">
-							<div class="mb-2">
-								<i class="fa fa-users fs-1 text-success lh-1"></i>
-							</div>
-							<div class="d-flex align-items-center justify-content-between">
-								<h5 class="m-0 text-secondary fw-normal">Users</h5>
-								<h3 class="m-0 text-success">3500</h3>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="col-xl-3 col-sm-6 col-12">
-					<div class="card mb-3">
-						<div class="card-body">
-							<div class="mb-2">
-								<i class="fa fa-cubes fs-1 text-success lh-1"></i>
-							</div>
-							<div class="d-flex align-items-center justify-content-between">
-								<h5 class="m-0 text-secondary fw-normal">Accounts</h5>
-								<h3 class="m-0 text-success">2900</h3>
+							<div class="d-flex align-items-center flex-row">
+								<div class="d-flex align-items-center">
+									<div class="border border-primary grd-primary-light rounded-4 p-3">
+										<i class="bi bi-check-circle text-primary fs-3 lh-1"></i>
+									</div>
+									<div class="mx-3">
+										<h3 class="m-0">1800</h3>
+										<p class="m-0 text-secondary">Likes</p>
+									</div>
+								</div>
+								<div id="sparklineLine1" class="ms-auto"></div>
 							</div>
 						</div>
 					</div>
@@ -51,13 +43,17 @@ import { RouterLink } from "vue-router";
 				<div class="col-xl-3 col-sm-6 col-12">
 					<div class="card mb-3">
 						<div class="card-body">
-							<div class="arrow-label">+18%</div>
-							<div class="mb-2">
-								<i class="fa fa-paw fs-1 text-success lh-1"></i>
-							</div>
-							<div class="d-flex align-items-center justify-content-between">
-								<h5 class="m-0 text-secondary fw-normal">Clients</h5>
-								<h3 class="m-0 text-success">6500</h3>
+							<div class="d-flex align-items-center flex-row">
+								<div class="d-flex align-items-center">
+									<div class="border border-primary grd-primary-light rounded-4 p-3">
+										<i class="bi bi-check-circle text-primary fs-3 lh-1"></i>
+									</div>
+									<div class="mx-3">
+										<h3 class="m-0">4500</h3>
+										<p class="m-0 text-secondary">Views</p>
+									</div>
+								</div>
+								<div id="sparklineLine2" class="ms-auto"></div>
 							</div>
 						</div>
 					</div>
@@ -65,20 +61,41 @@ import { RouterLink } from "vue-router";
 				<div class="col-xl-3 col-sm-6 col-12">
 					<div class="card mb-3">
 						<div class="card-body">
-							<div class="arrow-label">+24%</div>
-							<div class="mb-2">
-								<i class="fa fa-refresh fs-1 text-success lh-1"></i>
+							<div class="d-flex align-items-center flex-row">
+								<div class="d-flex align-items-center">
+									<div class="border border-primary grd-primary-light rounded-4 p-3">
+										<i class="bi bi-check-circle text-primary fs-3 lh-1"></i>
+									</div>
+									<div class="mx-3">
+										<h3 class="m-0">3200</h3>
+										<p class="m-0 text-secondary">Users</p>
+									</div>
+								</div>
+								<div id="sparklineLine3" class="ms-auto"></div>
 							</div>
-							<div class="d-flex align-items-center justify-content-between">
-								<h5 class="m-0 text-secondary fw-normal">Transactions</h5>
-								<h3 class="m-0 text-success">7200</h3>
+						</div>
+					</div>
+				</div>
+				<div class="col-xl-3 col-sm-6 col-12">
+					<div class="card mb-3">
+						<div class="card-body">
+							<div class="d-flex align-items-center flex-row">
+								<div class="d-flex align-items-center">
+									<div class="border border-danger grd-danger-light rounded-4 p-3">
+										<i class="bi bi-check-circle text-danger fs-3 lh-1"></i>
+									</div>
+									<div class="mx-3">
+										<h3 class="m-0">9700</h3>
+										<p class="m-0 text-secondary">Sales</p>
+									</div>
+								</div>
+								<div id="sparklineLine4" class="ms-auto"></div>
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
 			<!-- Row end -->
-
 			<!-- Row start -->
 			<div class="row gx-3">
 				<div class="col-xl-12 col-lg-12">

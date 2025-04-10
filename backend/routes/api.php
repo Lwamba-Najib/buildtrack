@@ -17,14 +17,18 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\AddressBookController;
 use App\Http\Controllers\MeasurementController;
+use App\Http\Controllers\ReportStockController;
 use App\Http\Controllers\StockBalanceController;
 use App\Http\Controllers\EmailSettingsController;
 use App\Http\Controllers\ApplicationLogController;
 use App\Http\Controllers\ReportDailySalesController;
+use App\Http\Controllers\ReportStockAgingController;
 use App\Http\Controllers\SecuritySettingsController;
 use App\Http\Controllers\ReportWeeklySalesController;
 use App\Http\Controllers\AppearanceSettingsController;
 use App\Http\Controllers\ReportMonthlySalesController;
+use App\Http\Controllers\ReportStockBalanceController;
+use App\Http\Controllers\ReportStockLowAlertController;
 use App\Http\Controllers\BusinessInfoSettingsController;
 use Laravel\Sanctum\Http\Controllers\CsrfCookieController;
 use App\Http\Controllers\ReportConsolidatedSalesController;
@@ -190,6 +194,26 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('reportconsolidatedsaleslist', [ReportConsolidatedSalesController::class, 'index']);
     Route::get('reportConsolidatedsalesxlsx', [ReportConsolidatedSalesController::class, 'xlsx']);
     Route::get('reportconsolidatedsalescsv', [ReportConsolidatedSalesController::class, 'csv']);
+
+    //Report Stock
+    Route::get('reportstocklist', [ReportStockController::class, 'index']);
+    Route::get('reportstockxlsx', [ReportStockController::class, 'xlsx']);
+    Route::get('reportstockcsv', [ReportStockController::class, 'csv']);
+
+    //Report Stock Balance
+    Route::get('reportstockbalancelist', [ReportStockBalanceController::class, 'index']);
+    Route::get('reportstockbalancexlsx', [ReportStockBalanceController::class, 'xlsx']);
+    Route::get('reportstockbalancecsv', [ReportStockBalanceController::class, 'csv']);
+
+    //Report Stock Low Alert
+    Route::get('reportstocklowalertlist', [ReportStockLowAlertController::class, 'index']);
+    Route::get('reportstocklowalertxlsx', [ReportStockLowAlertController::class, 'xlsx']);
+    Route::get('reportstocklowalertcsv', [ReportStockLowAlertController::class, 'csv']);
+
+    //Report Stock Aging
+    Route::get('reportstockaginglist', [ReportStockAgingController::class, 'index']);
+    Route::get('reportstockagingxlsx', [ReportStockAgingController::class, 'xlsx']);
+    Route::get('reportstockagingcsv', [ReportStockAgingController::class, 'csv']);
 
     //Address Book
     Route::get('addressbook/{phone_number}', [AddressBookController::class, 'show']);

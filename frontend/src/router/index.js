@@ -67,8 +67,7 @@ import ReportConsolidatedSalesList from "@/views/whenin/reports/sales/consolidat
 // Report Inventory
 import ReportStockList from "@/views/whenin/reports/inventory/stock/List.vue";
 import ReportStockBalanceList from "@/views/whenin/reports/inventory/stockbalance/List.vue";
-import ReportLowStockAlertList from "@/views/whenin/reports/inventory/lowstockalert/List.vue";
-import ReportStockValuationList from "@/views/whenin/reports/inventory/stockvaluation/List.vue";
+import ReportStockLowAlertList from "@/views/whenin/reports/inventory/stocklowalert/List.vue";
 import ReportStockAgingList from "@/views/whenin/reports/inventory/stockaging/List.vue";
 // Report Financial
 import ReportRevenueList from "@/views/whenin/reports/financial/revenue/List.vue";
@@ -371,15 +370,9 @@ const router = createRouter({
                     meta: { public: false },
                 },
                 {
-                    path: "reportlowstockalertlist",
-                    name: "ReportLowStockAlertList",
-                    component: ReportLowStockAlertList,
-                    meta: { public: false },
-                },
-                {
-                    path: "reportstockvaluationlist",
-                    name: "ReportStockValuationList",
-                    component: ReportStockValuationList,
+                    path: "reportstocklowalertlist",
+                    name: "ReportStockLowAlertList",
+                    component: ReportStockLowAlertList,
                     meta: { public: false },
                 },
                 {

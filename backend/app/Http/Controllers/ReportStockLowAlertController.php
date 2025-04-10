@@ -8,22 +8,19 @@ use Illuminate\Http\Request;
 use App\Enums\PaginationSize;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+use App\Exports\ReportStockLowAlertExport;
+use Maatwebsite\Excel\Facades\Excel;
 
-class StockBalanceController extends Controller
+class ReportStockLowAlertController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
         try {
             // Validate request
             $validated = $request->validate([
                 'pagination_size' => 'nullable|integer|min:5',
-                'page' => 'nullable|integer|min:1',
-                'search' => 'nullable|string',
-                'startDate' => 'nullable|date',
-                'endDate' => 'nullable|date',
+                'search' => 'nullable|string'
             ]);
 
             // Default pagination size
@@ -37,20 +34,21 @@ class StockBalanceController extends Controller
                     'stock_balances.brand_id',
                     'stock_balances.measurement_id',
                     'stock_balances.batch_number',
-                    'stock_balances.balance', // Available stock
-                    DB::raw('COALESCE(SUM(sales_items.quantity), 0) as total_sold'), // Total sold quantity
-                    DB::raw('MIN(stocks.min_stock_level) as min_stock_level') // Get the lowest min_stock_level
+                    'stock_balances.balance',
+                    DB::raw('MIN(stocks.min_stock_level) as min_stock_level'),
+                    DB::raw('MIN(stocks.unit_price) as unit_price'),
+                    DB::raw('stock_balances.balance * MIN(stocks.unit_price) as total_stocks')
                 )
                 ->leftJoin('stocks', function ($join) {
                     $join->on('stock_balances.product_id', '=', 'stocks.product_id')
                         ->on('stock_balances.brand_id', '=', 'stocks.brand_id')
                         ->on('stock_balances.measurement_id', '=', 'stocks.measurement_id')
-                        ->on('stock_balances.batch_number', '=', 'stocks.batch_number'); // Ensures correct batch mapping
+                        ->on('stock_balances.batch_number', '=', 'stocks.batch_number');
                 })
-                ->leftJoin('sales_items', function ($join) {
-                    $join->on('stock_balances.product_id', '=', 'sales_items.product_id')
-                        ->on('stock_balances.brand_id', '=', 'sales_items.brand_id')
-                        ->on('stock_balances.measurement_id', '=', 'sales_items.measurement_id');
+                ->where(function($query) {
+                    // Only include items that are low or out of stock
+                    $query->where('stock_balances.balance', '<=', DB::raw('stocks.min_stock_level'))
+                          ->orWhere('stock_balances.balance', '<=', 0);
                 })
                 ->groupBy(
                     'stock_balances.id',
@@ -62,8 +60,8 @@ class StockBalanceController extends Controller
                 );
 
             // Apply search filters
-            if (!empty($request->input('search'))) {
-                $searchTerm = $request->input('search');
+            if (!empty($validated['search'])) {
+                $searchTerm = $validated['search'];
                 $query->where(function ($query) use ($searchTerm) {
                     $query->whereHas('product', function ($q) use ($searchTerm) {
                         $q->where('name', 'LIKE', '%' . $searchTerm . '%');
@@ -79,15 +77,45 @@ class StockBalanceController extends Controller
             }
 
             // Fetch paginated data
-            $stocks = $query->orderBy('stock_balances.product_id', 'DESC')->paginate($paginationSize);
+            $stocks = $query->orderBy('stock_balances.balance', 'ASC') // Sort by lowest balance first
+                          ->paginate($paginationSize);
 
-            return response()->json($stocks);
+            // Calculate total stock value for all items
+            $totalStockValue = $stocks->sum('total_stocks');
+
+            return response()->json([
+                'data' => $stocks,
+                'total_stocks' => $totalStockValue
+            ]);
         } catch (\Exception $e) {
-            Log::error('Error in Listing Stock Balances: ' . $e->getMessage());
+            Log::error('Error in Listing Stock Low Alerts: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Internal server error',
             ], 500);
+        }
+    }
+
+    public function xlsx(Request $request)
+    {
+        $filename = 'stock_low_alert_' . now()->format('d_m_Y') . '.xlsx';
+        return Excel::download(new ReportStockLowAlertExport(), $filename);
+    }
+
+    public function csv(Request $request)
+    {
+        $filename = 'stock_low_alert_' . now()->format('d_m_Y') . '.csv';
+        return Excel::download(new ReportStockLowAlertExport(), $filename);
+    }
+
+    private function getStockStatus($balance, $minStockLevel)
+    {
+        if ($balance <= 0) {
+            return ['text' => 'Out of Stock', 'class' => 'out_of_stock'];
+        } elseif ($balance <= $minStockLevel) {
+            return ['text' => 'Low Stock', 'class' => 'low_stock'];
+        } else {
+            return ['text' => 'In Stock', 'class' => 'in_stock'];
         }
     }
 }

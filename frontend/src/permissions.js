@@ -121,13 +121,8 @@ export const accessKeys = [
     { key: "reportStockBalanceFilter", name: "Filter Stock Balance", category: "Inventory Reports", visibility: "public", availability: "private" },
     { key: "reportStockBalanceExport", name: "Export Stock Balance", category: "Inventory Reports", visibility: "public", availability: "private" },
 
-    { key: "reportLowStockAlertList", name: "List Low Stock Alert", category: "Inventory Reports", visibility: "public", availability: "private" },
-    { key: "reportLowStockAlertFilter", name: "Filter Low Stock Alert", category: "Inventory Reports", visibility: "public", availability: "private" },
-    { key: "reportLowStockAlertExport", name: "Export Low Stock Alert", category: "Inventory Reports", visibility: "public", availability: "private" },
-
-    { key: "reportStockValuationList", name: "List Stock Valuation", category: "Inventory Reports", visibility: "public", availability: "private" },
-    { key: "reportStockValuationFilter", name: "Filter Stock Valuation", category: "Inventory Reports", visibility: "public", availability: "private" },
-    { key: "reportStockValuationExport", name: "Export Stock Valuation", category: "Inventory Reports", visibility: "public", availability: "private" },
+    { key: "reportStockLowAlertList", name: "List Low Stock Alert", category: "Inventory Reports", visibility: "public", availability: "private" },
+    { key: "reportStockLowAlertExport", name: "Export Low Stock Alert", category: "Inventory Reports", visibility: "public", availability: "private" },
 
     { key: "reportStockAgingList", name: "List Stock Aging", category: "Inventory Reports", visibility: "public", availability: "private" },
     { key: "reportStockAgingFilter", name: "Filter Stock Aging", category: "Inventory Reports", visibility: "public", availability: "private" },

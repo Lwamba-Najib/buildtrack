@@ -341,10 +341,11 @@ const getStockStatus = (balance, minStockLevel) => {
 										<tr>
 											<th scope="col">#</th>
 											<th scope="col">PRODUCT</th>
+											<th scope="col">BATCH NUMBER</th>
 											<th scope="col">BRAND</th>
 											<th scope="col">UNIT OF MEASUREMENT</th>
 											<th scope="col">QTY IN SOCK</th>
-											<th scope="col">QTY IN SOLD</th>
+											<th scope="col">QTY SOLD</th>
 											<th scope="col">STATUS</th>
 											<th scope="col" class="control-column"></th>
 										</tr>
@@ -355,6 +356,7 @@ const getStockStatus = (balance, minStockLevel) => {
 												{{ (pagination.currentPage - 1) * paginationSize + index + 1 }}
 											</th>
 											<td>{{ log.product.name || "N/A" }}</td>
+											<td>{{ log.batch_number || "N/A" }}</td>
 											<td>{{ log.brand.name || "N/A" }}</td>
 											<td>{{ log.measurement.name || "N/A" }}</td>
 											<td class="text-end">{{ Number(log.balance).toLocaleString() || 0 }}</td>
@@ -367,7 +369,7 @@ const getStockStatus = (balance, minStockLevel) => {
 											<td class="control-column"></td>
 										</tr>
 										<tr v-if="!isLoading && stocks.length === 0">
-											<th colspan="8" class="text-center">
+											<th colspan="9" class="text-center">
 												No records found.
 											</th>
 										</tr>
