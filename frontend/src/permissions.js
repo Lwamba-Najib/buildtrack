@@ -129,25 +129,25 @@ export const accessKeys = [
     { key: "reportStockAgingExport", name: "Export Stock Aging", category: "Inventory Reports", visibility: "public", availability: "private" },
 
     /* Reports Financial */
-    { key: "reportRevenueList", name: "List Revenue", category: "Financial Reports", visibility: "public", availability: "private" },
-    { key: "reportRevenueFilter", name: "Filter Revenue", category: "Financial Reports", visibility: "public", availability: "private" },
-    { key: "reportRevenueExport", name: "Export Revenue", category: "Financial Reports", visibility: "public", availability: "private" },
+    { key: "reportRevenueList", name: "List Revenue", category: "Financial Reports", visibility: "private", availability: "private" },
+    { key: "reportRevenueFilter", name: "Filter Revenue", category: "Financial Reports", visibility: "private", availability: "private" },
+    { key: "reportRevenueExport", name: "Export Revenue", category: "Financial Reports", visibility: "private", availability: "private" },
 
-    { key: "reportProfitLossList", name: "List Profit & Loss", category: "Financial Reports", visibility: "public", availability: "private" },
-    { key: "reportProfitLossFilter", name: "Filter Profit & Loss", category: "Financial Reports", visibility: "public", availability: "private" },    
-    { key: "reportProfitLossExport", name: "Export Profit & Loss", category: "Financial Reports", visibility: "public", availability: "private" },
+    { key: "reportProfitLossList", name: "List Profit & Loss", category: "Financial Reports", visibility: "private", availability: "private" },
+    { key: "reportProfitLossFilter", name: "Filter Profit & Loss", category: "Financial Reports", visibility: "private", availability: "private" },    
+    { key: "reportProfitLossExport", name: "Export Profit & Loss", category: "Financial Reports", visibility: "private", availability: "private" },
 
-    { key: "reportExpenseList", name: "List Expense", category: "Financial Reports", visibility: "public", availability: "private" },
-    { key: "reportExpenseFilter", name: "Filter Expense", category: "Financial Reports", visibility: "public", availability: "private" },
-    { key: "reportExpenseExport", name: "Export Expense", category: "Financial Reports", visibility: "public", availability: "private" },
+    { key: "reportExpenseList", name: "List Expense", category: "Financial Reports", visibility: "private", availability: "private" },
+    { key: "reportExpenseFilter", name: "Filter Expense", category: "Financial Reports", visibility: "private", availability: "private" },
+    { key: "reportExpenseExport", name: "Export Expense", category: "Financial Reports", visibility: "private", availability: "private" },
 
-    { key: "reportSupplierList", name: "List Supplier", category: "Financial Reports", visibility: "public", availability: "private" },
-    { key: "reportSupplierFilter", name: "Filter Supplier", category: "Financial Reports", visibility: "public", availability: "private" },
-    { key: "reportSupplierExport", name: "Export Supplier", category: "Financial Reports", visibility: "public", availability: "private" },
+    { key: "reportSupplierList", name: "List Supplier", category: "Financial Reports", visibility: "private", availability: "private" },
+    { key: "reportSupplierFilter", name: "Filter Supplier", category: "Financial Reports", visibility: "private", availability: "private" },
+    { key: "reportSupplierExport", name: "Export Supplier", category: "Financial Reports", visibility: "private", availability: "private" },
 
-    { key: "reportTaxList", name: "List Tax", category: "Financial Reports", visibility: "public", availability: "private" },
-    { key: "reportTaxFilter", name: "Filter Tax", category: "Financial Reports", visibility: "public", availability: "private" },  
-    { key: "reportTaxExport", name: "Export Tax", category: "Financial Reports", visibility: "public", availability: "private" },   
+    { key: "reportTaxList", name: "List Tax", category: "Financial Reports", visibility: "pprivate", availability: "private" },
+    { key: "reportTaxFilter", name: "Filter Tax", category: "Financial Reports", visibility: "private", availability: "private" },  
+    { key: "reportTaxExport", name: "Export Tax", category: "Financial Reports", visibility: "private", availability: "private" },   
 
     // Manage Settings
     { key: "settings", name: "Settings", category: "Settings", visibility: "private", availability: "private" },
