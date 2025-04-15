@@ -88,9 +88,9 @@ onMounted(async () => {
                             <h6 class="mb-3">Stock Value</h6>
                             <h2 class="mb-3 d-flex align-items-center justify-content-between">
                                 <div class="p-3 border border-primary grd-primary-light rounded-5 d-flex">
-                                    <i class="bi bi-bar-chart fs-4 lh-1 text-primary"></i>
+                                    <i class="bi bi-box-seam fs-4 lh-1 text-primary"></i>
                                 </div>
-                                <span class="text-info">UGX {{ stockValue }}</span>
+                                <span class="text-info">UGX {{ Number(stockValue).toLocaleString() || 0 }}</span>
                             </h2>
                             <p class="m-0 small text-secondary">
                                 Monthly stock value
@@ -104,9 +104,9 @@ onMounted(async () => {
                             <h6 class="mb-3">Total Revenue</h6>
                             <h2 class="mb-3 d-flex align-items-center justify-content-between">
                                 <div class="p-3 border border-primary grd-primary-light rounded-5 d-flex">
-                                    <i class="bi bi-cash-stack fs-4 lh-1 text-primary"></i>
+                                    <i class="bi bi-bank fs-4 lh-1 text-primary"></i>
                                 </div>
-                                <span class="text-info">UGX {{ totalRevenue }}</span>
+                                <span class="text-info">UGX {{ Number(totalRevenue).toLocaleString() || 0 }}</span>
                             </h2>
                             <p class="m-0 small text-secondary">
                                 Monthly revenue
@@ -120,9 +120,9 @@ onMounted(async () => {
                             <h6 class="mb-3">Gross Profit</h6>
                             <h2 class="mb-3 d-flex align-items-center justify-content-between">
                                 <div class="p-3 border border-success grd-success-light rounded-5 d-flex">
-                                    <i class="bi bi-currency-dollar fs-4 lh-1 text-success"></i>
+                                    <i class="bi bi-graph-up-arrow fs-4 lh-1 text-success"></i>
                                 </div>
-                                <span class="text-info">UGX {{ grossProfit }}</span>
+                                <span class="text-info">UGX {{ Number(grossProfit).toLocaleString() || 0 }}</span>
                             </h2>
                             <p class="m-0 small text-secondary">
                                 Monthly gross profit
@@ -136,9 +136,9 @@ onMounted(async () => {
                             <h6 class="mb-3">Net Profit</h6>
                             <h2 class="mb-3 d-flex align-items-center justify-content-between">
                                 <div class="p-3 border border-success grd-success-light rounded-5 d-flex">
-                                    <i class="bi bi-currency-dollar fs-4 lh-1 text-success"></i>
+                                    <i class="bi bi-piggy-bank fs-4 lh-1 text-success"></i>
                                 </div>
-                                <span class="text-info">UGX {{ netProfit }}</span>
+                                <span class="text-info">UGX {{ Number(netProfit).toLocaleString() || 0 }}</span>
                             </h2>
                             <p class="m-0 small text-secondary">
                                 Monthly net profit
@@ -152,9 +152,9 @@ onMounted(async () => {
                             <h6 class="mb-3">Total Loss</h6>
                             <h2 class="mb-3 d-flex align-items-center justify-content-between">
                                 <div class="p-3 border border-danger grd-danger-light rounded-5 d-flex">
-                                    <i class="bi bi-graph-down fs-4 lh-1 text-danger"></i>
+                                    <i class="bi bi-graph-down-arrow fs-4 lh-1 text-danger"></i>
                                 </div>
-                                <span class="text-info">UGX {{ totalLoss }}</span>
+                                <span class="text-info">UGX {{ Number(totalLoss).toLocaleString() || 0 }}</span>
                             </h2>
                             <p class="m-0 small text-secondary">
                                 Monthly total loss
