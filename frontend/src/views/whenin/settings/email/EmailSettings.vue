@@ -76,23 +76,6 @@ const fetchEmailSettings = async () => {
 	}
 };
 
-// Define SMTP Encryption Options and Corresponding Ports
-const smtpEncryptionOptions = ref([
-    { value: 'ENCRYPTION_STARTTLS', label: 'STARTTLS', port: '587' },
-    { value: 'ENCRYPTION_TLS', label: 'TLS', port: '587' },
-    { value: 'ENCRYPTION_SMTPS', label: 'SMTPS', port: '465' },
-    { value: 'ENCRYPTION_NONE', label: 'None', port: '25' }
-]);
-// Function to update SMTP Port based on selected SMTP Encryption
-const updateSmtpPort = () => {
-    const selectedOption = smtpEncryptionOptions.value.find(option => option.value === smtp_encryption.value);
-    if (selectedOption) {
-        smtp_port.value = selectedOption.port;
-    } else {
-        smtp_port.value = "";
-    }
-};
-
 // Function to validate the form fields
 const validateForm = () => {
 	// Clear previous validation alerts
@@ -226,7 +209,9 @@ const initializeSelect2 = () => {
 					break;
 				case "smtp_encryption":
 					smtp_encryption.value = newValue || ""; // Use empty string if cleared
-					updateSmtpPort(); // Ensure the SMTP port updates
+					break;
+				case "smtp_port":
+					smtp_port.value = newValue || ""; // Use empty string if cleared
 					break;
 				default:
 				console.warn(`Unhandled field: ${fieldName}`);
@@ -397,7 +382,7 @@ watch([smtp_auth, smtp_encryption], () => {
 											{{ alerts.smtp_auth }}
 										</div>
 									</div>
-								</div>
+								</div>								
 								<!-- SMTP Host Field -->
 								<div class="col-lg-6 col-sm-4 col-12">
 									<div class="mb-3">
@@ -465,9 +450,10 @@ watch([smtp_auth, smtp_encryption], () => {
 											class="form-select select"
 										>
 											<option value="">Select SMTP Encryption</option>
-											<option v-for="option in smtpEncryptionOptions" :key="option.value" :value="option.value">
-												{{ option.label }}
-											</option>
+											<option value="ENCRYPTION_SMTPS">SMTPS</option>
+											<option value="ENCRYPTION_TLS">TLS</option>
+											<option value="ENCRYPTION_STARTTLS">STARTTLS</option>
+											<option value="ENCRYPTION_NONE">NONE</option>
 										</select>
 										<!-- Display validation message for SMTP Encryption -->
 										<div
@@ -478,18 +464,20 @@ watch([smtp_auth, smtp_encryption], () => {
 										</div>
 									</div>
 								</div>
-
 								<!-- SMTP Port Field -->
 								<div class="col-lg-6 col-sm-4 col-12">
 									<div class="mb-3">
 										<label class="form-label">SMTP Port</label>
-										<input
+										<select
 											v-model="smtp_port"
-											type="text"
-											class="form-control"
-											placeholder="Enter SMTP Port"
-											:readonly="true"
-										/>
+											id="smtp_port"
+											class="form-select select"
+										>
+											<option value="">Select SMTP Port</option>
+											<option value="465">465</option>
+											<option value="587">587</option>
+											<option value="25">25</option>
+										</select>
 										<!-- Display validation message for SMTP Port -->
 										<div
 											v-if="alerts.smtp_port"
@@ -519,7 +507,7 @@ watch([smtp_auth, smtp_encryption], () => {
 									@click="handleSubmit"
 									:disabled="isLoading"
 								>
-									<i class="fa fa-save"></i> Save
+									<i class="bi bi-save"></i> Save
 								</button>
 							</div>
 						</div>

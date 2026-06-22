@@ -290,7 +290,7 @@ const pluralizeMeasurement = (measurement, quantity) => {
                                                                     <tr>
                                                                         <td class="align-left text-start" style="border: none;">
                                                                             <strong>From:</strong>
-                                                                            <p class="text-start m-0 mt-2" style="line-height: 4px;">
+                                                                            <div class="text-start m-0 mt-2" style="line-height: 4px;">
                                                                                 {{ businessInfoSettings.business_name || 'No name' }}
                                                                                 . <hr class="seperator-line"/>
                                                                                 {{ businessInfoSettings.business_address || 'No address' }}
@@ -299,11 +299,11 @@ const pluralizeMeasurement = (measurement, quantity) => {
                                                                                 . <hr class="seperator-line"/>
                                                                                 {{ businessInfoSettings.business_email || 'No email' }}
                                                                                 . <hr class="seperator-line"/>
-                                                                            </p>
+                                                                            </div>
                                                                         </td>
                                                                         <td class="align-middle" style="border: none;">
                                                                             <strong>Bill To:</strong>
-                                                                            <p class="text-begin m-0 mt-2" style="line-height: 4px;">
+                                                                            <div class="text-begin m-0 mt-2" style="line-height: 4px;">
                                                                                 {{ sale.customer_name || 'No name' }}
                                                                                 . <hr class="seperator-line"/>
                                                                                 {{ sale.customer_address || 'No address' }}
@@ -312,7 +312,7 @@ const pluralizeMeasurement = (measurement, quantity) => {
                                                                                 . <hr class="seperator-line"/>
                                                                                 {{ sale.customer_email || 'No email' }}
                                                                                 . <hr class="seperator-line"/>
-                                                                            </p>
+                                                                            </div>
                                                                         </td>
                                                                     </tr>
                                                                 </tbody>

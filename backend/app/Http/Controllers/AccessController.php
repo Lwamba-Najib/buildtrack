@@ -306,8 +306,6 @@ class AccessController extends Controller
                         'name' => $user->name,
                         'id' => $user->id,
                         'role_id' => $user->role_id,
-                        'client_id' => $user->client_id,
-                        'user_type' => $user->user_type,
                         'country' => $user->country,
                     ],
                     'token' => $token,
@@ -541,26 +539,19 @@ class AccessController extends Controller
         }
         //Log::info('Accessing logged in user data', ['user' => $user]);
 
-        if ($user) {
-            // Clear the session ID when logging out
-            $user->update(['session_id' => null]);
-            // Store the log
-            (new ApplicationLogController())->storeLog($request, 'Authentication', 'Logout', 'User logged out successfully.', $user->id);
+        // Clear the session ID when logging out
+        $user->update(['session_id' => null]);
+        // Store the log
+        (new ApplicationLogController())->storeLog($request, 'Authentication', 'Logout', 'User logged out successfully.', $user->id);
 
-            // Revoke all tokens for the user
-            $user->tokens()->delete();
-            Auth::logout();
-            Session::flush();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Logged out successfully!',
-            ],200);
-        }
-
+        // Revoke all tokens for the user
+        $user->tokens()->delete();
+        // Flush session data if applicable (optional for Sanctum)
+        Session::flush();
+        // Return a success response
         return response()->json([
-            'success' => false,
-            'message' => 'User not authenticated',
-        ], 401);
+            'success' => true,
+            'message' => 'Logged out successfully!',
+        ],200);
     }
 }

@@ -290,21 +290,21 @@ const pluralizeMeasurement = (measurement, quantity) => {
                                                                     <tr>
                                                                         <td class="align-left text-start" style="border: none;">
                                                                             <strong>From:</strong>
-                                                                            <p class="text-start m-0 mt-2" style="line-height: 4px;">
+                                                                            <div class="text-start m-0 mt-2" style="line-height: 4px;">
                                                                                 {{ businessInfoSettings.business_name || 'No name' }}
                                                                                 . <hr class="seperator-line"/>
                                                                                 {{ businessInfoSettings.business_contact || 'No contact' }}
                                                                                 . <hr class="seperator-line"/>
-                                                                            </p>
+                                                                            </div>
                                                                         </td>
                                                                         <td class="align-middle" style="border: none;">
                                                                             <strong>Sold To:</strong>
-                                                                            <p class="text-begin m-0 mt-2" style="line-height: 4px;">
+                                                                            <div class="text-begin m-0 mt-2" style="line-height: 4px;">
                                                                                 {{ sale.customer_name || 'No name' }}
                                                                                 . <hr class="seperator-line"/>
                                                                                 {{ sale.customer_phone || 'No contact' }}
                                                                                 . <hr class="seperator-line"/>
-                                                                            </p>
+                                                                            </div>
                                                                         </td>
                                                                     </tr>
                                                                 </tbody>
