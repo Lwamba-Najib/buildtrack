@@ -1,4 +1,29 @@
-# Ignore frontend configuration
+# Backend
+/vendor/
+.env
+/storage/*.key
+/public/hot
+/public/storage
+.phpunit.cache
+Homestead.json
+Homestead.yaml
+auth.json
+npm-debug.log
+yarn-error.log
+
+# Frontend
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.env
+/frontend/.env.local
+
+# IDE
+/.fleet/
+/.idea/
+/.vscode/
+
+# Mac
+.DS_Store# Ignore frontend configuration
 frontend/src/config.js
 
 # Ignore backend environment and sensitive configuration files

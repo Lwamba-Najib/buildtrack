@@ -11,13 +11,12 @@ const instance = axios.create({
 // Function to fetch CSRF token
 export const fetchCsrfToken = async () => {
     try {
-        // Laravel Sanctum requires a call to this endpoint to set the CSRF token cookie
         await instance.get("/sanctum/csrf-cookie");
-    } catch (error) {
+    } catch (error) { 
         console.error("Failed to fetch CSRF token:", error);
         throw error;
     }
 };
 
-// Exporting the created instance for use in other parts of the application
+
 export default instance;
