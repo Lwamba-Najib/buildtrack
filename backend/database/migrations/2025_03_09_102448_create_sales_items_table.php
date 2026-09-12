@@ -19,7 +19,6 @@ return new class extends Migration
             $table->foreignId('measurement_id')->constrained();
             $table->string('unit_price');
             $table->integer('quantity');
-            $table->integer('unit_price');
             $table->integer('total_price');
             $table->unsignedBigInteger('created_by')->nullable(); // Define column without constraint
             $table->unsignedBigInteger('updated_by')->nullable(); // Define column without constraint

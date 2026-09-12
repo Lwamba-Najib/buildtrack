@@ -1,0 +1,205 @@
+.table {
+    width: 100%;
+}
+
+.table>thead>tr>th {
+    text-align: left !important;
+    font-weight: bold !important;
+}
+
+.table>tbody>tr>td {
+    padding-top: 0% !important;
+    padding-bottom: 0% !important;
+}
+
+/* Apply text wrapping to columns with the class 'wrap-column' */
+#table .wrap-column {
+    /* Apply text wrapping */
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-width: 300px;
+}
+
+#podtable-container table .toggle,
+#podtable-container table .main-toggle {
+    padding-left: 20px !important;
+}
+
+#podtable-container table .main-toggle {
+    padding-top: 30px !important;
+}
+
+.main-toggle::before {
+    border: 1px solid #177dff !important;
+}
+
+.toggle::before {
+    border: 1px solid #177dff !important;
+}
+
+.right {
+    float: right !important;
+}
+
+.left {
+    float: left !important;
+}
+
+.faq_wrap {
+    box-shadow: 0 1px 5px 1px #32CD32 !important; /* Green glow effect */
+    background: rgba(255, 255, 255, 0.8); /* Slightly more transparent (80% opacity) */
+    border-radius: 10px; /* Smooth corners */
+    position: relative; /* Enable child element positioning */
+    overflow: hidden; /* Clip content inside the container */
+}
+
+/* Optional: Adding a slight mirror reflection */
+.faq_wrap::after {
+    content: "";
+    background: rgba(255, 255, 255, 0.2); /* More subtle reflection with even more transparency */
+    transform: skewY(-10deg); /* Slant the reflection */
+    pointer-events: none; /* Ensure it's non-interactive */
+}
+
+.container-login {
+    box-shadow: 0 1px 5px 1px #32CD32 !important; /* Green glow effect */
+    background: rgba(255, 255, 255, 0.8); /* Slightly more transparent (80% opacity) */
+    border-radius: 10px; /* Smooth corners */
+    position: relative; /* Enable child element positioning */
+    overflow: hidden; /* Clip content inside the container */
+}
+
+/* Optional: Adding a slight mirror reflection */
+.container-login::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 50%; /* Cover the top half */
+    background: rgba(255, 255, 255, 0.2); /* More subtle reflection with even more transparency */
+    transform: skewY(-10deg); /* Slant the reflection */
+    pointer-events: none; /* Ensure it's non-interactive */
+}
+
+.container-login::after {
+    animation: shine 3s infinite;
+}
+
+@keyframes shine {
+    0% { transform: translateY(-100%) skewY(-10deg); }
+    100% { transform: translateY(100%) skewY(-10deg); }
+}
+
+input[type="text"],
+input[type="tel"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="date"],
+input[type="number"],
+input[type="radio"],
+input[type="checkbox"],
+textarea,
+select {
+    border: 1px solid #6c757d !important;
+    border-color: #6c757d !important;
+}
+
+input[type="text"]:read-only,
+input[type="tel"]:read-only,
+input[type="email"]:read-only,
+input[type="password"]:read-only,
+input[type="search"]:read-only,
+input[type="date"]:read-only,
+input[type="number"]:read-only,
+textarea:read-only {
+    background-color: #eee;
+}
+
+.select2-container .select2-selection--single{
+    border: 1px solid #6c757d !important;
+    border-color: #6c757d !important;
+    height: 35px !important;
+}
+
+.form-control {
+    border-color: #6c757d !important;
+}
+
+.filter {
+    max-width: 200px !important;
+}
+
+.filter-form::deep {
+    height: 15px;
+}
+
+.full-height {
+    height: 100vh;
+    /* Full viewport height */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+/* Container for image preview */
+.img-preview-container {
+    display: flex;
+    justify-content: center; /* Center the image horizontally */
+    align-items: center;     /* Center the image vertically */
+    height: 200px;           /* Set a fixed height for the container */
+    width: 100%;             /* Make it as wide as its parent */
+    overflow: hidden;        /* Optional: Hide overflow if the image is too large */
+    border: 1px solid #ccc;  /* Optional: Add a border around the preview */
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+/* Style for the image preview */
+.img-preview {
+    width: 150px;          /* Ensure the image scales within the container */
+    height: 150px;         /* Ensure the image doesn't overflow vertically */
+    object-fit: contain;      /* Maintain aspect ratio while fitting image */
+    border: 1px solid #6c757d !important;
+}
+/* Container for image preview */
+.img-preview-container-wp {
+    display: flex;
+    justify-content: center; /* Center the image horizontally */
+    align-items: center;     /* Center the image vertically */
+    height: 500px;           /* Set a fixed height for the container */
+    width: 100%;             /* Make it as wide as its parent */
+    overflow: hidden;        /* Optional: Hide overflow if the image is too large */
+    border: 1px solid #ccc;  /* Optional: Add a border around the preview */
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+/* Style for the image preview */
+.img-preview-wp {
+    max-width: 725px;          /* Ensure the image scales within the container */
+    height: 490px;         /* Ensure the image doesn't overflow vertically */
+    object-fit: contain;      /* Maintain aspect ratio while fitting image */
+    border: 1px solid #6c757d !important;
+}
+/* Container for image preview */
+.slip-preview-container {
+    display: flex;
+    justify-content: center; /* Center the image horizontally */
+    align-items: center;     /* Center the image vertically */
+    height: 300px;           /* Set a fixed height for the container */
+    width: 100%;             /* Make it as wide as its parent */
+    overflow: hidden;        /* Optional: Hide overflow if the image is too large */
+    border: 1px solid #ccc;  /* Optional: Add a border around the preview */
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+/* Style for the image preview */
+.slip-preview {
+    width: 500px;          /* Ensure the image scales within the container */
+    height: 250px;         /* Ensure the image doesn't overflow vertically */
+    object-fit: contain;      /* Maintain aspect ratio while fitting image */
+    border: 1px solid #6c757d !important;
+}
