@@ -22,4 +22,4 @@ RUN if [ ! -f .env ]; then cp .env.example .env && php artisan key:generate; fi
 RUN chmod -R 755 storage bootstrap/cache
 
 # Start command using Render's PORT variable
-CMD sh -c "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"
+CMD sh -c "php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"# Force clean rebuild

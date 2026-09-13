@@ -75,7 +75,7 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
-            'sslmode' => 'require', // Changed from 'prefer' to 'require' for Render
+            'sslmode' => 'require', 
         ],
         
         'sqlsrv' => [
