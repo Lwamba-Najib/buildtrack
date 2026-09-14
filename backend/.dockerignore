@@ -1,0 +1,6 @@
+.env
+.env.*
+bootstrap/cache/*.php
+!.gitignore
+node_modules
+.git
