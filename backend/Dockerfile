@@ -13,11 +13,13 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Copy application files
 COPY . .
 
+# 🔍 DEBUG STEP: Print the exact database.php file that Docker copied into the container
+RUN echo "========== START OF config/database.php ==========" && cat config/database.php && echo "========== END OF config/database.php =========="
+
 # Install dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# CRITICAL FIX: Forcefully delete any cached config files generated during composer install
-# This ensures Laravel is forced to read your fresh config/database.php file
+# Delete any cached config files that might override database.php
 RUN rm -rf bootstrap/cache/*.php || true
 
 # Fix permissions
@@ -25,5 +27,5 @@ RUN chmod -R 775 storage bootstrap/cache
 
 EXPOSE $PORT
 
-# Start the server directly without running config:clear to avoid boot-time database checks
+# Start the server
 CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT
