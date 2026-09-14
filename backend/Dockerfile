@@ -16,13 +16,14 @@ COPY . .
 # Install dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# CRITICAL FIX: Delete cached config and local .env so they don't override Render's variables
-RUN rm -f .env bootstrap/cache/config.php bootstrap/cache/packages.php bootstrap/cache/services.php
+# CRITICAL FIX: Forcefully delete any cached config files generated during composer install
+# This ensures Laravel is forced to read your fresh config/database.php file
+RUN rm -rf bootstrap/cache/*.php || true
 
 # Fix permissions
 RUN chmod -R 775 storage bootstrap/cache
 
 EXPOSE $PORT
 
-# Start the server
+# Start the server directly without running config:clear to avoid boot-time database checks
 CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT
