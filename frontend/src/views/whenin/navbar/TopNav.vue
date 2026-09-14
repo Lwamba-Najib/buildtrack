@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
 import axios from "@/axios"; // Adjust the path as necessary
-import { backendBaseUrl } from "@/config"; // Import the backend base URL from config
+const backendBaseUrl = import.meta.env.VITE_API_URL || window.location.origin;
 import { useRouter } from "vue-router";
 import { useStore } from "vuex";
 import Preloader from "../singles/Preloader.vue"; // Adjust the path as necessary
