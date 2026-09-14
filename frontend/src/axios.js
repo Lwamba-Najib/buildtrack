@@ -1,7 +1,5 @@
 import axios from "axios";
 
-// Use environment variable for local development, fallback to relative '/api' for production (Render)
-// In production, since Laravel serves the frontend, '/api' automatically resolves to your Render domain.
 const baseURL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 const instance = axios.create({
