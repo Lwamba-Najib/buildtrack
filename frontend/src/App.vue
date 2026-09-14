@@ -3,7 +3,7 @@ import { onMounted, ref } from "vue";
 import { useStore } from "vuex"; // Import Vuex store
 import { RouterView } from "vue-router";
 import axios from "@/axios";
-import { backendBaseUrl } from "@/config";
+import { backendBaseUrl } from "@/config.js";
 
 // Vuex store
 const store = useStore();
