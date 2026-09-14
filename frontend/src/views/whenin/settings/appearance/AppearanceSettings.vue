@@ -2,7 +2,7 @@
 // Import necessary modules and functions
 import { onMounted, ref, reactive, watch } from "vue";
 import axios from "@/axios"; // Ensure axios is properly configured
-import { backendBaseUrl } from "@/config"; // Import the backend base URL from config
+const backendBaseUrl = import.meta.env.VITE_API_URL || window.location.origin; // Import the backend base URL from config
 import { useRouter } from "vue-router";
 import { useCustomUtils } from "@/utils/customUtils";
 
