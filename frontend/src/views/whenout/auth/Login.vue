@@ -108,7 +108,7 @@ const handleSubmit = async (event) => {
         await fetchCsrfToken();
 
         // Make login request
-		const response = await axios.post("/api/login", {
+		const response = await axios.post('/login', {
 			email: email.value,
 			password: password.value,
 		});
