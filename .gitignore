@@ -29,3 +29,5 @@ frontend/src/config.js
 # Ignore backend environment and sensitive configuration files
 backend/.env
 backend/config/cors.php
+backend.zip
+.env copy
