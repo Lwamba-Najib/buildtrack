@@ -19,13 +19,8 @@ RUN composer install --no-dev --optimize-autoloader
 # Fix permissions
 RUN chmod -R 775 storage bootstrap/cache
 
-# Create a startup script that generates .env from environment variables
-RUN echo '#!/bin/bash\n\
-php artisan config:clear\n\
-php artisan cache:clear\n\
-php artisan migrate --force\n\
-php artisan serve --host=0.0.0.0 --port=$PORT' > /start.sh && chmod +x /start.sh
-
 EXPOSE $PORT
 
-CMD ["/start.sh"]
+# Safely generate .env file by quoting all values (fixes DATABASE_URL parsing), 
+# then clear caches, run migrations, and start the server.
+CMD sh -c "env | sed 's/=\(.*\)/=\"\1\"/' > .env && php artisan config:clear && php artisan cache:clear && php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT"
