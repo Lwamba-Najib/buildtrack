@@ -3,7 +3,7 @@ import { onMounted, ref } from "vue";
 import { useStore } from "vuex"; // Import Vuex store
 import { RouterView } from "vue-router";
 import axios from "@/axios";
-import { backendBaseUrl } from "@/config.js";
+const backendBaseUrl = import.meta.env.VITE_API_URL || window.location.origin;
 
 // Vuex store
 const store = useStore();
