@@ -16,10 +16,13 @@ COPY . .
 # Install dependencies
 RUN composer install --no-dev --optimize-autoloader
 
+# CRITICAL FIX: Delete cached config and local .env so they don't override Render's variables
+RUN rm -f .env bootstrap/cache/config.php bootstrap/cache/packages.php bootstrap/cache/services.php
+
 # Fix permissions
 RUN chmod -R 775 storage bootstrap/cache
 
 EXPOSE $PORT
 
-# Start the server directly - Render injects env vars automatically
+# Start the server
 CMD php artisan migrate --force && php artisan serve --host=0.0.0.0 --port=$PORT
