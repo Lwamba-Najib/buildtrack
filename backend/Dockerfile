@@ -13,14 +13,15 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Copy application files
 COPY . .
 
-# 🔍 DEBUG STEP: Print the exact database.php file that Docker copied into the container
-RUN echo "========== START OF config/database.php ==========" && cat config/database.php && echo "========== END OF config/database.php =========="
+# NUCLEAR FIX: Forcefully overwrite database.php with the correct pgsql config
+# This guarantees Laravel has the right config, regardless of what is in Git
+RUN echo "<?php return ['default' => env('DB_CONNECTION', 'pgsql'), 'connections' => ['pgsql' => ['driver' => 'pgsql', 'url' => env('DATABASE_URL'), 'host' => env('DB_HOST', '127.0.0.1'), 'port' => env('DB_PORT', '5432'), 'database' => env('DB_DATABASE', 'forge'), 'username' => env('DB_USERNAME', 'forge'), 'password' => env('DB_PASSWORD', ''), 'charset' => 'utf8', 'prefix' => '', 'prefix_indexes' => true, 'search_path' => 'public', 'sslmode' => 'prefer']], 'migrations' => 'migrations'];" > config/database.php
+
+# Delete any cached config files and the local .env file
+RUN rm -f .env bootstrap/cache/config.php bootstrap/cache/packages.php bootstrap/cache/services.php
 
 # Install dependencies
 RUN composer install --no-dev --optimize-autoloader
-
-# Delete any cached config files that might override database.php
-RUN rm -rf bootstrap/cache/*.php || true
 
 # Fix permissions
 RUN chmod -R 775 storage bootstrap/cache
