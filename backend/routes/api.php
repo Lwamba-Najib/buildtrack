@@ -247,3 +247,22 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('applicationlogxlsx/{applicationlog}', [ApplicationLogController::class, 'xlsx']);
     Route::get('applicationlogcsv/{applicationlog}', [ApplicationLogController::class, 'csv']);
 });
+
+// TEMPORARY ROUTE TO CREATE ADMIN USER - DELETE THIS AFTER USE
+use Illuminate\Support\Facades\Hash;
+
+Route::get('/setup-admin', function () {
+    $existingUser = \App\Models\User::where('email', 'admin@example.com')->first();
+    
+    if ($existingUser) {
+        return response()->json(['message' => 'Admin user already exists!']);
+    }
+
+    $user = new \App\Models\User();
+    $user->name = 'Admin';
+    $user->email = 'admin@example.com';
+    $user->password = Hash::make('password');
+    $user->save();
+
+    return response()->json(['message' => 'Success! Admin user created. You can now delete this route.']);
+});
