@@ -1,4 +1,5 @@
 <script setup>
+import logoSvg from '@/assets/logo.svg';
 import { onMounted, ref } from "vue";
 import { useStore } from "vuex"; // Import Vuex store
 import { RouterView } from "vue-router";
@@ -26,11 +27,12 @@ const fetchSettings = async () => {
 			document.title = appName.value; // Update the document title
 
 			// Update logo source if logo exists, otherwise use default
-			if (settingsData.logo) {
-				logoSrc.value = `${backendBaseUrl}/storage/${settingsData.logo}`;
-			} else {
-				logoSrc.value = "/assets/images/noimage.jpg"; // Default image
-			}
+        if (settingsData.logo) {
+            logoSrc.value = `${backendBaseUrl}/storage/${settingsData.logo}`;
+         } 
+		 else {
+             logoSrc.value = logoSvg; // Use the existing frontend logo
+            }
 
 			// Update favicon source if favicon exists, otherwise use default
 			if (settingsData.favicon) {
