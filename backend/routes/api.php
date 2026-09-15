@@ -289,3 +289,20 @@ Route::get('/debug-user', function () {
         'password_verify' => password_verify('password', $user->password),
     ]);
 });
+
+// TEMPORARY: Reset admin password
+Route::get('/reset-password', function () {
+    $user = \App\Models\User::where('email', 'admin@example.com')->first();
+    
+    if ($user) {
+        $user->password = bcrypt('password');
+        $user->save();
+        
+        return response()->json([
+            'message' => 'Password reset successfully!',
+            'new_verify' => password_verify('password', $user->password)
+        ]);
+    }
+    
+    return response()->json(['error' => 'User not found']);
+});
