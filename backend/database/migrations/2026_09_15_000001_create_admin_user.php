@@ -1,8 +1,6 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -18,13 +16,16 @@ return new class extends Migration
                 'name' => 'Admin',
                 'email' => 'admin@example.com',
                 'password' => Hash::make('password'),
+                'user_number' => 'ADMIN001', // Fixes the NOT NULL violation
+                'country' => 'Uganda',       // Based on your error logs
+                'phone_code' => '+256',      // Based on your error logs
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
             
             echo "Admin user created successfully!\n";
         } else {
-            echo " Admin user already exists.\n";
+            echo "Admin user already exists.\n";
         }
     }
 
