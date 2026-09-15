@@ -1,36 +1,29 @@
 <script setup>
 import { ref, reactive } from "vue";
 import { useRouter, RouterLink } from "vue-router";
-import axios, { fetchCsrfToken } from "@/axios"; // Ensure fetchCsrfToken is correctly exported
-import { useStore } from "vuex"; // Make sure you import and use your Vuex store if you use Vuex
-
-const props = defineProps({
-  logoSrc: {
-    type: String,
-    required: true,
-  }
-});
+import axios, { fetchCsrfToken } from "@/axios";
+import { useStore } from "vuex";
 
 // Initialize reactive variables for email, password, alerts, and loading state
-const email = ref(""); // Email input field
-const password = ref(""); // Password input field
-const showPassword = ref(false); // Toggle password visibility
+const email = ref("");
+const password = ref("");
+const showPassword = ref(false);
 const alerts = reactive({
-	success: "", // Success message
-	error: "", // General error message
-	email: "", // Email validation error message
-	password: "", // Password validation error message
-	captcha: "", // Captcha validation error message
+	success: "",
+	error: "",
+	email: "",
+	password: "",
+	captcha: "",
 });
-const isLoading = ref(false); // Loading state
-const isCaptchaCorrect = ref(false); // Tracks if CAPTCHA is correct
-const router = useRouter(); // Router instance for navigation
-const store = useStore(); // Vuex store for state management
+const isLoading = ref(false);
+const isCaptchaCorrect = ref(false);
+const router = useRouter();
+const store = useStore();
 
 // CAPTCHA setup
-const num1 = ref(Math.floor(Math.random() * 10) + 1); // Random number 1
-const num2 = ref(Math.floor(Math.random() * 10) + 1); // Random number 2
-const userCaptchaAnswer = ref(""); // User's input for CAPTCHA
+const num1 = ref(Math.floor(Math.random() * 10) + 1);
+const num2 = ref(Math.floor(Math.random() * 10) + 1);
+const userCaptchaAnswer = ref("");
 
 // Validate CAPTCHA
 const validateCaptcha = () => {
@@ -58,13 +51,12 @@ const validateEmail = (email) => {
 
 // Function to validate the form fields
 const validateForm = () => {
-	alerts.email = ""; // Clear previous email error
-	alerts.password = ""; // Clear previous password error
-	alerts.captcha = ""; // Clear previous captcha error
+	alerts.email = "";
+	alerts.password = "";
+	alerts.captcha = "";
 
 	let isValid = true;
 
-	// Validate email field
 	if (!email.value) {
 		alerts.email = "Email is required.";
 		isValid = false;
@@ -73,41 +65,37 @@ const validateForm = () => {
 		isValid = false;
 	}
 
-	// Validate password field
 	if (!password.value) {
 		alerts.password = "Password is required.";
 		isValid = false;
 	}
 
-	// Validate captcha field
 	if (!isCaptchaCorrect.value) {
 		alerts.captcha = "Please solve the CAPTCHA correctly.";
 		isValid = false;
 	}
 
-	return isValid; // Return true if form is valid, false otherwise
+	return isValid;
 };
 
 // Function to handle form submission
 const handleSubmit = async (event) => {
-	event.preventDefault(); // Prevent default form submission
+	event.preventDefault();
 
-	// Clear previous alerts
 	alerts.success = "";
 	alerts.error = "";
 
-	// Validate form before submission
 	if (!validateForm()) {
-		return; // Stop submission if validation fails
+		return;
 	}
 
-	isLoading.value = true; // Set loading state to true
+	isLoading.value = true;
 
 	try {
 		// Fetch CSRF token before making the login request
-        await fetchCsrfToken();
+		await fetchCsrfToken();
 
-        // Make login request
+		// Make login request
 		const response = await axios.post('/login', {
 			email: email.value,
 			password: password.value,
@@ -117,29 +105,29 @@ const handleSubmit = async (event) => {
 		if (response.data.success) {
 			if (response.data.message === '2FA required.') {
 				// Store 2FA data in the Vuex store
-                store.dispatch("setTwoFAData", response.data.data);
-                // Redirect to 2FA verification page
-                alerts.success = "Redirecting to 2FA verification...";
-                setTimeout(() => router.push({ name: "TwoFA" }), 500);
-            } else {
-                // Proceed with normal login
+				store.dispatch("setTwoFAData", response.data.data);
+				// Redirect to 2FA verification page
+				alerts.success = "Redirecting to 2FA verification...";
+				setTimeout(() => router.push({ name: "TwoFA" }), 500);
+			} else {
+				// Proceed with normal login
 				if (response.data.data.token) {
 					// Store the token in local storage for session management
 					localStorage.setItem("token", response.data.data.token);
-					//console.log("Token stored:", localStorage.getItem("token")); // Log token after storing
+					
 					// Delay calling fetchUserData to ensure the token is fully stored
 					setTimeout(() => {
 						store.commit("WhenIn");
 						store.dispatch("fetchUserData");
 						alerts.success = "Redirecting ...";
-						setTimeout(() => router.push("/home"), 500); // Redirect after 1 second
-					}, 100); // 100ms delay
+						setTimeout(() => router.push("/home"), 500);
+					}, 100);
 				} else {
 					alerts.error = "Authentication token missing. Please try again.";
 				}
 			}
 		} else {
-			alerts.error =response.data.message || "Invalid email or password. Please try again.";
+			alerts.error = response.data.message || "Invalid email or password. Please try again.";
 		}
 
 		// Clear sensitive data after submission
@@ -149,15 +137,15 @@ const handleSubmit = async (event) => {
 		// Handle different types of errors
 		if (error.response && error.response.status === 422) {
 			const errors = error.response.data.errors;
-			alerts.email = errors.email ? errors.email[0] : ""; // Display validation error for email
-			alerts.password = errors.password ? errors.password[0] : ""; // Display validation error for password
+			alerts.email = errors.email ? errors.email[0] : "";
+			alerts.password = errors.password ? errors.password[0] : "";
 		} else if (error.response && error.response.status === 401) {
 			alerts.error = error.response.data.message || "Unauthorized. Please check your credentials.";
 		} else {
 			alerts.error = error.response?.data?.message || "An error occurred. Please try again later.";
 		}
 	} finally {
-		isLoading.value = false; // Set loading state to false after request completes
+		isLoading.value = false;
 	}
 };
 </script>
@@ -173,10 +161,11 @@ const handleSubmit = async (event) => {
 						<div class="border rounded-2 p-4 mt-5 container-login">
 							<div class="login-form">
 								<span class="mb-4 d-flex">
+									<!-- Hardcoded to the correct public logo path -->
 									<img
-										:src="props.logoSrc"
+										src="/assets/images/logo.png"
 										class="img-fluid login-logo"
-										alt="Earth Admin Dashboard"
+										alt="BuildTrack Logo"
 									/>
 								</span>
 								<h5 class="fw-light mb-4">
@@ -184,54 +173,28 @@ const handleSubmit = async (event) => {
 								</h5>
 
 								<!-- Loading Spinner with Text -->
-								<div
-									v-if="isLoading"
-									class="d-flex justify-content-left align-items-left mb-3"
-								>
-									<div
-										class="spinner-border text-success"
-										role="status"
-									>
+								<div v-if="isLoading" class="d-flex justify-content-left align-items-left mb-3">
+									<div class="spinner-border text-success" role="status">
 										<span class="visually-hidden">Loading...</span>
 									</div>
 									<span class="ms-2">Please wait...</span>
 								</div>
 
 								<!-- Success Alert -->
-								<div
-									v-if="alerts.success"
-									class="alert border border-success alert-dismissible fade show text-success"
-									role="alert"
-								>
+								<div v-if="alerts.success" class="alert border border-success alert-dismissible fade show text-success" role="alert">
 									{{ alerts.success }}
-									<button
-										type="button"
-										class="btn-close"
-										data-bs-dismiss="alert"
-										aria-label="Close"
-									></button>
+									<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 								</div>
 
 								<!-- Error Alert -->
-								<div
-									v-if="alerts.error"
-									class="alert border border-danger alert-dismissible fade show text-danger"
-									role="alert"
-								>
+								<div v-if="alerts.error" class="alert border border-danger alert-dismissible fade show text-danger" role="alert">
 									{{ alerts.error }}
-									<button
-										type="button"
-										class="btn-close"
-										data-bs-dismiss="alert"
-										aria-label="Close"
-									></button>
+									<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 								</div>
 
 								<!-- Email Input -->
 								<div class="mb-3">
-									<label class="form-label" for="email"
-										>Your Email</label
-									>
+									<label class="form-label" for="email">Your Email</label>
 									<input
 										v-model="email"
 										id="email"
@@ -248,9 +211,7 @@ const handleSubmit = async (event) => {
 
 								<!-- Password Input with Checkbox -->
 								<div class="mb-3">
-									<label class="form-label" for="password"
-										>Your Password</label
-									>
+									<label class="form-label" for="password">Your Password</label>
 									<input
 										:type="showPassword ? 'text' : 'password'"
 										v-model="password"
@@ -276,29 +237,25 @@ const handleSubmit = async (event) => {
 									/>
 									<label class="form-check-label">Show Password</label>
 								</div>
+
 								<!-- CAPTCHA -->
 								<div class="mb-3">
 									<div class="d-flex justify-content-between align-items-center mb-2">
-										<label 
-											class="form-label me-2 fs-5" 
-											for="captcha"
-										>
+										<label class="form-label me-2 fs-5" for="captcha">
 											What is {{ num1 }} + {{ num2 }}?
 										</label>
 
 										<!-- Reset CAPTCHA Button -->
-										<button 
-											type="button" 
-											class="btn btn-primary ms-3 py-0 px-2 small" 
-											@click="resetCaptcha"
-										>
+										<button type="button" class="btn btn-primary ms-3 py-0 px-2 small" @click="resetCaptcha">
 											Reset
 										</button>
 									</div>
 									<input 
 										v-model="userCaptchaAnswer" 
-										id="captcha" name="captcha" 
-										type="text" class="form-control" 
+										id="captcha" 
+										name="captcha" 
+										type="text" 
+										class="form-control" 
 										placeholder="Enter your answer" 
 										@input="validateCaptcha" 
 									/>
@@ -306,6 +263,7 @@ const handleSubmit = async (event) => {
 										{{ alerts.captcha }}
 									</div>
 								</div>
+
 								<!-- Submit Button -->
 								<div class="d-grid py-3 mt-2">
 									<button
@@ -318,19 +276,9 @@ const handleSubmit = async (event) => {
 								</div>
 
 								<!-- Forgot Password Link -->
-								<div
-									class="d-flex align-items-right justify-content-between"
-								>
-									<RouterLink
-										to="/faqpublic"
-										class="text-blue text-decoration-underline"
-										>FAQs</RouterLink
-									>
-									<RouterLink
-										to="/forgotpassword"
-										class="text-blue text-decoration-underline"
-										>Lost password?</RouterLink
-									>
+								<div class="d-flex align-items-right justify-content-between">
+									<RouterLink to="/faqpublic" class="text-blue text-decoration-underline">FAQs</RouterLink>
+									<RouterLink to="/forgotpassword" class="text-blue text-decoration-underline">Lost password?</RouterLink>
 								</div>
 							</div>
 						</div>
