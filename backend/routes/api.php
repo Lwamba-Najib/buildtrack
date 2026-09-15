@@ -266,3 +266,26 @@ Route::get('/setup-admin', function () {
 
     return response()->json(['message' => 'Success! Admin user created. You can now delete this route.']);
 });
+
+// TEMPORARY DEBUG ROUTE - DELETE AFTER USE
+Route::get('/debug-user', function () {
+    $user = \App\Models\User::where('email', 'admin@example.com')->first();
+    
+    if (!$user) {
+        return response()->json(['error' => 'User not found']);
+    }
+    
+    return response()->json([
+        'user' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'user_number' => $user->user_number,
+            'role_id' => $user->role_id,
+            'environment' => $user->environment,
+            'is_locked' => $user->is_locked,
+            'password_hash' => substr($user->password, 0, 20) . '...',
+        ],
+        'password_verify' => password_verify('password', $user->password),
+    ]);
+});
