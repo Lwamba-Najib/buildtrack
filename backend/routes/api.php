@@ -378,3 +378,27 @@ Route::get('/debug-menus-query', function () {
         ], 500);
     }
 });
+
+// TEMPORARY: Debug the exact Eloquent query used in the controller
+Route::get('/debug-access-menu', function () {
+    try {
+        $roleId = 1;
+        // Use a small sample of keys to test
+        $menuArray = ['dashboard', 'trash', 'roleList', 'userList']; 
+        
+        // This mimics exactly what the PermissionController does
+        $accessibleMenus = \App\Models\Permission::where('role_id', $roleId)
+            ->whereIn('menu', $menuArray)
+            ->pluck('menu')
+            ->toArray();
+            
+        return response()->json(['success' => true, 'data' => $accessibleMenus]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false, 
+            'error' => $e->getMessage(), 
+            'file' => $e->getFile(), 
+            'line' => $e->getLine()
+        ], 500);
+    }
+});
