@@ -20,14 +20,22 @@ const getCookie = (name) => {
 };
 
 // -----------------------------------------------------------------------------
-// REQUEST INTERCEPTOR: Automatically attach CSRF token to requests
+// REQUEST INTERCEPTOR: Automatically attach CSRF token AND Bearer Token
 // -----------------------------------------------------------------------------
 instance.interceptors.request.use(
     (config) => {
-        const token = getCookie('XSRF-TOKEN');
-        if (token) {
-            config.headers['X-XSRF-TOKEN'] = token;
+        // 1. Attach CSRF token (for stateful requests)
+        const csrfToken = getCookie('XSRF-TOKEN');
+        if (csrfToken) {
+            config.headers['X-XSRF-TOKEN'] = csrfToken;
         }
+
+        // 2. Attach Bearer Token (for stateless API authentication)
+        const token = localStorage.getItem('token');
+        if (token) {
+            config.headers['Authorization'] = `Bearer ${token}`;
+        }
+
         return config;
     },
     (error) => {
@@ -47,9 +55,8 @@ instance.interceptors.response.use(
             // 401 Unauthorized: Session expired or invalid token
             if (error.response.status === 401) {
                 console.warn("Session expired. Redirecting to login...");
-                // Uncomment the line below if you use Vue Router to redirect:
-                // router.push('/login'); 
-                // Or for a hard reload: window.location.href = '/login';
+                localStorage.removeItem('token'); // Clear invalid token
+                window.location.href = '/'; // Redirect to login
             }
             
             // 419 Page Expired: CSRF token mismatch
