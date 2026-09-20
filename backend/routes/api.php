@@ -351,3 +351,30 @@ Route::get('/grant-all-permissions', function () {
     
     return response()->json(['message' => 'All permissions granted to Super Admin!', 'count' => count($menuList)]);
 });
+
+// TEMPORARY: Debug database query directly
+Route::get('/debug-menus-query', function () {
+    try {
+        // We know your admin user is role_id 1
+        $roleId = 1;
+        
+        // Count how many permissions exist for role 1
+        $total = \DB::table('permissions')->where('role_id', $roleId)->count();
+        
+        // Try to fetch the menu names
+        $menus = \DB::table('permissions')->where('role_id', $roleId)->pluck('menu')->toArray();
+        
+        return response()->json([
+            'status' => 'success',
+            'total_permissions' => $total,
+            'menus_found' => $menus
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ], 500);
+    }
+});
