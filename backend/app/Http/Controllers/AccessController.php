@@ -25,6 +25,7 @@ class AccessController extends Controller
     {
         $this->passwordPolicyController = $passwordPolicyController;
     }
+
     public function authenticate(Request $request, PhpMailerService $phpMailerService)
     {
         // Validate the incoming request
@@ -45,7 +46,7 @@ class AccessController extends Controller
             // Fetch the security settings from the database
             $securitySettings = SecuritySettings::first();
             if (!$securitySettings) {
-                return response()->json(['error' => 'Security settings not found'], 404);
+                return response()->json(['success' => false, 'message' => 'Security settings not found'], 404);
             }
 
             // Get the user based on the provided email
@@ -68,7 +69,7 @@ class AccessController extends Controller
 
             // Fetch login attempt settings and check failed login attempts
             $maxAttempts = $securitySettings->security_settings_login_attempt ?? 5;
-            $lockoutTime = 1; // Minutes - updated to 1 minute lockout duration
+            $lockoutTime = 1; // Minutes
 
             if ($user->failed_attempts >= $maxAttempts && $user->lockout_until && Carbon::parse($user->lockout_until)->isFuture()) {
                 return response()->json([
@@ -76,12 +77,12 @@ class AccessController extends Controller
                     'message' => 'Too many failed login attempts. Please try again after 1 minute.',
                 ], 429);
             }
+            
             // If the user has exceeded max attempts and the lockout time has passed, permanently lock the account
             if ($user->failed_attempts >= $maxAttempts && Carbon::parse($user->lockout_until)->isPast()) {
-                // Lock the account permanently if lockout time has passed and max attempts were still exceeded
                 $user->update([
-                    'is_locked' => true,  // Lock the account permanently
-                    'lockout_until' => null,  // Clear the temporary lockout time
+                    'is_locked' => true,
+                    'lockout_until' => null,
                 ]);
 
                 return response()->json([
@@ -89,12 +90,13 @@ class AccessController extends Controller
                     'message' => 'Too many failed login attempts. Your account has been locked. Please contact support.',
                 ], 403);
             }
+            
             // Attempt to authenticate the user
             if (Auth::attempt($validated)) {
                 $user = Auth::user();
 
                 if (!$user instanceof User) {
-                    return response()->json( [
+                    return response()->json([
                         'success' => false,
                         'message' => 'Invalid user instance.'
                     ], 400);
@@ -132,7 +134,7 @@ class AccessController extends Controller
                     'lockout_until' => null,
                     'last_failed_attempt' => null,
                     'last_login_at' => now(),
-                    'is_locked' => false, // Unlock account on successful login
+                    'is_locked' => false,
                 ]);
 
                 // Check if the password has expired using `password_policy_due`
@@ -152,8 +154,7 @@ class AccessController extends Controller
                 if ($securitySettings && $securitySettings->security_settings_2fa === 'Yes') {
                     // Generate OTP and return response indicating 2FA is required
                     $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-                    // Send the OTP via email
-                    $to = $user->email; // Use the user's email address
+                    $to = $user->email;
                     $subject = 'Your OTP Code';
                     $body = "Your OTP code is: <strong>$otp</strong>. Please use this code to verify your account.";
 
@@ -162,7 +163,7 @@ class AccessController extends Controller
                     $hashedOTP = Hash::make($otp);
                     $user->update([
                         'otp' => $hashedOTP,
-                        'otp_expires_at' => now()->addMinutes(5), // OTP expires in 5 minutes
+                        'otp_expires_at' => now()->addMinutes(5),
                     ]);
 
                     return response()->json([
@@ -174,14 +175,12 @@ class AccessController extends Controller
                                 'name' => $user->name,
                                 'email' => $user->email,
                             ],
-                            'otp' => $otp, // Send OTP to the user (e.g., via email or SMS)
+                            'otp' => $otp,
                         ],
                     ], 200);
                 }
 
                 // If 2FA is not enabled, proceed with normal authentication
-
-                // Create token with session ID in the name for easier identification
                 $token = $user->createToken('authToken_' . $newSessionId)->plainTextToken;
 
                 // Log the authentication event
@@ -206,13 +205,15 @@ class AccessController extends Controller
                     ],
                 ], 200);
             }
+            
             // Increment failed attempts
             $user->increment('failed_attempts');
             $user->update(['last_failed_attempt' => now()]);
+            
             // Lock account if max attempts are reached
             if ($user->failed_attempts >= $maxAttempts) {
                 $user->update([
-                    'lockout_until' => now()->addMinutes($lockoutTime), // Optional temporary lockout
+                    'lockout_until' => now()->addMinutes($lockoutTime),
                 ]);
 
                 return response()->json([
@@ -221,17 +222,13 @@ class AccessController extends Controller
                 ], 429);
             }
 
-            // If authentication fails, return an error
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid login credentials!',
             ], 401);
 
         } catch (\Exception $e) {
-            // Log the exception for debugging
             Log::error('Authentication error: ' . $e->getMessage());
-
-            // Return a generic error response
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred during authentication. Please try again.',
@@ -255,23 +252,19 @@ class AccessController extends Controller
             ], 404);
         }
 
-        // Check if the OTP has expired
         if ($user->otp_expires_at && now()->gt($user->otp_expires_at)) {
             return response()->json([
                 'success' => false,
                 'message' => 'OTP has expired. Please request a new one.',
             ], 401);
         }
-        // Verify the OTP
+        
         if (Hash::check($request->otp, $user->otp)) {
-            // Generate new session ID
             $newSessionId = Str::uuid()->toString();
 
-            // If user has an existing session, revoke it
             if ($user->session_id) {
                 $user->tokens()->delete();
 
-                // Log the forced logout
                 (new ApplicationLogController())->storeLog(
                     $request,
                     'Authentication',
@@ -281,22 +274,13 @@ class AccessController extends Controller
                 );
             }
 
-            // Clear the OTP and its expiry time after successful verification
             $user->update([
                 'session_id' => $newSessionId,
                 'otp' => null,
                 'otp_expires_at' => null,
             ]);
-            // Create token with session ID
+            
             $token = $user->createToken('authToken_' . $newSessionId)->plainTextToken;
-            // Log the authentication event
-            /* (new ApplicationLogController())->storeLog(
-                $request,
-                'Authentication',
-                'Login',
-                'User logged in successfully without working hours restrictions.',
-                $user->id,
-            ); */
 
             return response()->json([
                 'success' => true,
@@ -306,7 +290,7 @@ class AccessController extends Controller
                         'name' => $user->name,
                         'id' => $user->id,
                         'role_id' => $user->role_id,
-                        'country' => $user->country,
+                        'country' => $user->country ?? 'Unknown',
                     ],
                     'token' => $token,
                 ],
@@ -330,6 +314,9 @@ class AccessController extends Controller
             ], 401);
         }
 
+        // Safely get role name to prevent crash if relationship is broken or null
+        $roleName = $user->role ? $user->role->name : 'Super Admin';
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -337,7 +324,7 @@ class AccessController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'role_id' => $user->role_id,
-                    'role_name' => $user->role->name,
+                    'role_name' => $roleName,
                 ],
             ],
         ]);
@@ -345,17 +332,13 @@ class AccessController extends Controller
 
     public function authenticated()
     {
-        // Check if the user is authenticated
         if (Auth::check()) {
-            $user = Auth::user(); // Retrieve the authenticated user
-            // Get the session lifetime from the config (in minutes)
+            $user = Auth::user();
             $sessionLifetime = config('session.lifetime');
 
-            // Calculate the time since the last request (last activity is stored automatically)
             $lastActivity = Session::get('last_activity') ?? time();
             $lastActivityTime = Carbon::createFromTimestamp($lastActivity);
 
-            // Calculate the remaining time
             $remainingMinutes = max(0, $sessionLifetime - Carbon::now()->diffInMinutes($lastActivityTime));
 
             return response()->json([
@@ -373,10 +356,8 @@ class AccessController extends Controller
 
     public function getOTP(Request $request, PhpMailerService $phpMailerService)
     {
-        // Retrieve the user_id from the request
         $userId = $request->input('user_id');
 
-        // Find the user by ID
         $user = User::find($userId);
 
         if (!$user) {
@@ -386,20 +367,15 @@ class AccessController extends Controller
             ], 404);
         }
 
-        // Generate a 6-digit OTP
         $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-
-        // Hash the OTP (optional, depending on your security requirements)
         $hashedOTP = Hash::make($otp);
 
-        // Update the OTP column in the users table
         $user->update([
             'otp' => $hashedOTP,
-            'otp_expires_at' => now()->addMinutes(5), // OTP expires in 5 minutes
+            'otp_expires_at' => now()->addMinutes(5),
         ]);
 
-        // Send the OTP via email
-        $to = $user->email; // Use the user's email address
+        $to = $user->email;
         $subject = 'Your OTP Code';
         $body = "Your OTP code is: <strong>$otp</strong>. Please use this code to verify your account.";
 
@@ -407,43 +383,37 @@ class AccessController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'OTP generated and sent successfully.',
-                'data' => $otp, // For debugging purposes only; remove in production
+                'data' => $otp,
             ]);
         } else {
             return response()->json([
                 'success' => false,
                 'message' => 'OTP generated but failed to send email.',
-                'data' => $otp, // For debugging purposes only; remove in production
+                'data' => $otp,
             ], 500);
         }
     }
 
     public function generateUserOTP(PhpMailerService $phpMailerService)
     {
-        // Get the currently authenticated user
         $user = Auth::user();
 
         if (!$user instanceof User) {
-            return response()->json( [
+            return response()->json([
                 'success' => false,
                 'message' => 'Invalid user instance.'
             ], 400);
         }
 
-        // Generate a 6-digit OTP
         $otp = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-
-        // Hash the OTP (optional, depending on your security requirements)
         $hashedOTP = Hash::make($otp);
 
-        // Update the OTP column in the users table
         $user->update([
             'otp' => $hashedOTP,
-            'otp_expires_at' => now()->addMinutes(5), // OTP expires in 5 minutes
+            'otp_expires_at' => now()->addMinutes(5),
         ]);
 
-        // Send the OTP via email
-        $to = $user->email; // Use the user's email address
+        $to = $user->email;
         $subject = 'Your OTP Code';
         $body = "Your OTP code is: <strong>$otp</strong>. Please use this code to authorize the transaction.";
 
@@ -451,30 +421,27 @@ class AccessController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'OTP generated and sent successfully.',
-                'data' => $otp, // For debugging purposes only; remove in production
+                'data' => $otp,
             ]);
         } else {
             return response()->json([
                 'success' => false,
                 'message' => 'OTP generated but failed to send email.',
-                'data' => $otp, // For debugging purposes only; remove in production
+                'data' => $otp,
             ], 500);
         }
     }
 
     public function forgotPassword(Request $request, PhpMailerService $phpMailerService)
     {
-        // Validate request data
         $validated = request()->validate(
             [
-                'email' => 'required|email|exists:users,email', // Ensure the email exists in the users table
+                'email' => 'required|email|exists:users,email',
             ]
         );
 
-        // Sanitize and normalize data
         $email = $validated['email'];
 
-        // Find the user by email
         $user = User::where('email', $email)->first();
 
         if (!$user) {
@@ -484,7 +451,6 @@ class AccessController extends Controller
             ], 404);
         }
 
-        // Generate a password using the passwordSetting() method
         $password = $this->passwordPolicyController->passwordSetting();
 
         if (!$password) {
@@ -494,22 +460,16 @@ class AccessController extends Controller
             ], 500);
         }
 
-        // Hash the password
         $hashedPassword = Hash::make($password);
 
-        // Update the user's password
         $user->update([
             'password' => $hashedPassword,
         ]);
 
-        // Set password expiry date
         $passwordExpiry = $this->passwordPolicyController->passwordExpiry();
-
-        // Add the new password to the password history
         $this->passwordPolicyController->passwordPolicyIn($hashedPassword, $passwordExpiry, $user->id);
 
-        // Send the password via email
-        $to = $email; // Use the user's email address
+        $to = $email;
         $subject = 'Your New Password';
         $body = "Your new password is: <strong>$password</strong>. Please use this password to log in to your account.";
 
@@ -517,13 +477,13 @@ class AccessController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Password generated and sent successfully.',
-                'data' => $password, // For debugging purposes only; remove in production
+                'data' => $password,
             ]);
         } else {
             return response()->json([
                 'success' => false,
                 'message' => 'Password generated but failed to send email.',
-                'data' => $password, // For debugging purposes only; remove in production
+                'data' => $password,
             ], 500);
         }
     }
@@ -532,26 +492,22 @@ class AccessController extends Controller
     {
         $user = Auth::user();
         if (!$user instanceof User) {
-            return response()->json( [
+            return response()->json([
                 'success' => false,
                 'message' => 'Invalid user instance.'
             ], 400);
         }
-        //Log::info('Accessing logged in user data', ['user' => $user]);
 
-        // Clear the session ID when logging out
         $user->update(['session_id' => null]);
-        // Store the log
+        
         (new ApplicationLogController())->storeLog($request, 'Authentication', 'Logout', 'User logged out successfully.', $user->id);
 
-        // Revoke all tokens for the user
         $user->tokens()->delete();
-        // Flush session data if applicable (optional for Sanctum)
         Session::flush();
-        // Return a success response
+        
         return response()->json([
             'success' => true,
             'message' => 'Logged out successfully!',
-        ],200);
+        ], 200);
     }
 }
