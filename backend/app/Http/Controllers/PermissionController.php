@@ -54,33 +54,49 @@ class PermissionController extends Controller
     }
 
     public function accessMenu(Request $request)
-    {
-        $menuArray = $request->input('menuArray', []); // Get the array of menu names from the request
+{
+    $menuArray = $request->input('menuArray', []);
 
-        try {
-            // Get the authenticated user's role ID and client ID
-            $authenticatedUser = auth()->user();
-            $activeUserRole = $authenticatedUser->role_id;
-       
-            // Query the permissions table to find accessible menu names for the role
-            $accessibleMenus = Permission::where('role_id', $activeUserRole)
-                ->whereIn('menu', $menuArray) // Filter only the menus provided in the request
-                ->pluck('menu') // Get the names of the menus
-                ->toArray(); // Convert to an array
-
-            // Return the result as a JSON response
-            return response()->json([
-                'success' => true,
-                'hasAccess' => $accessibleMenus, // Return the array of accessible menu names
-            ], 200);
-        } catch (\Exception $e) {
-            // Handle errors gracefully
+    try {
+        // Get the authenticated user
+        $authenticatedUser = auth()->user();
+        
+        // Check if user is authenticated
+        if (!$authenticatedUser) {
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while checking access: ' . $e->getMessage(),
-            ], 500);
+                'message' => 'User not authenticated',
+            ], 401);
         }
+        
+        $activeUserRole = $authenticatedUser->role_id;
+        
+        // Check if role_id exists
+        if (!$activeUserRole) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User has no role assigned',
+            ], 400);
+        }
+
+        // Query the permissions table
+        $accessibleMenus = Permission::where('role_id', $activeUserRole)
+            ->whereIn('menu', $menuArray)
+            ->pluck('menu')
+            ->toArray();
+
+        return response()->json([
+            'success' => true,
+            'hasAccess' => $accessibleMenus,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'An error occurred while checking access: ' . $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ], 500);
     }
+}
 
     /**
      * Display the specified resource.
