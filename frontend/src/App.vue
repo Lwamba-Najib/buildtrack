@@ -1,5 +1,4 @@
 <script setup>
-import logoSvg from '@/assets/logo.svg';
 import { onMounted, ref } from "vue";
 import { useStore } from "vuex"; // Import Vuex store
 import { RouterView } from "vue-router";
@@ -10,6 +9,7 @@ const backendBaseUrl = import.meta.env.VITE_API_URL || window.location.origin;
 const store = useStore();
 
 // Reactive variable for favicon and logo
+// NOTE: default is the REAL BuildTrack logo (lives in frontend/public/assets/images/)
 const faviconSrc = ref("/assets/images/favicon.png"); // Default favicon
 const logoSrc = ref("/assets/images/logo.png"); // Default logo
 const appName = ref("BuildTrack"); // Default application name
@@ -26,13 +26,12 @@ const fetchSettings = async () => {
 			appName.value = settingsData.name || "BuildTrack"; // Default to "BuildTrack" if name is not found
 			document.title = appName.value; // Update the document title
 
-			// Update logo source if logo exists, otherwise use default
-        if (settingsData.logo) {
-            logoSrc.value = `${backendBaseUrl}/storage/${settingsData.logo}`;
-         } 
-		 else {
-             logoSrc.value = logoSvg; // Use the existing frontend logo
-            }
+			// Update logo source if logo exists in DB, otherwise KEEP the real default logo
+			if (settingsData.logo) {
+				logoSrc.value = `${backendBaseUrl}/storage/${settingsData.logo}`;
+			} else {
+				logoSrc.value = "/assets/images/logo.png"; // Real BuildTrack logo as fallback (NOT the Vite svg)
+			}
 
 			// Update favicon source if favicon exists, otherwise use default
 			if (settingsData.favicon) {
@@ -66,7 +65,7 @@ const fetchSettings = async () => {
 
 // Fetch settings when component is mounted
 onMounted(() => {
-  	// Fetch settings when component is mounted
+	// Fetch settings when component is mounted
 	fetchSettings();
 
 	// Check if the token exists in localStorage before dispatching fetchUserData
@@ -79,5 +78,5 @@ onMounted(() => {
 </script>
 
 <template>
-  	<RouterView :logo-src="logoSrc" />
+	<RouterView :logo-src="logoSrc" />
 </template>
