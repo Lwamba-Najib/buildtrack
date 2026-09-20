@@ -402,3 +402,31 @@ Route::get('/debug-access-menu', function () {
         ], 500);
     }
 });
+
+// TEMPORARY: Test accessMenu with hardcoded role
+Route::get('/test-access-menu-hardcoded', function () {
+    try {
+        // Hardcode role_id = 1 (Super Admin) instead of getting from auth
+        $roleId = 1;
+        
+        // Get the menu array from the request (or use defaults)
+        $menuArray = ['dashboard', 'trash', 'roleList', 'userList', 'productList', 'salesPOS', 'salesList'];
+        
+        // Query permissions table
+        $accessibleMenus = \App\Models\Permission::where('role_id', $roleId)
+            ->whereIn('menu', $menuArray)
+            ->pluck('menu')
+            ->toArray();
+        
+        return response()->json([
+            'success' => true,
+            'hasAccess' => $accessibleMenus,
+            'role_id_used' => $roleId,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'An error occurred while checking access: ' . $e->getMessage(),
+        ], 500);
+    }
+});
