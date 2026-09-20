@@ -306,3 +306,48 @@ Route::get('/reset-password', function () {
     
     return response()->json(['error' => 'User not found']);
 });
+
+// TEMPORARY: Grant all menu permissions to Super Admin
+Route::get('/grant-all-permissions', function () {
+    // Get the Super Admin role (id = 1)
+    $roleId = 1;
+    
+    // Get all menu keys from permissions.php
+    $allMenus = \App\Models\Permission::all(); // This might fail if table is empty
+    
+    // Alternative: Just create permissions for all common menus
+    $menuList = [
+        'dashboard', 'trash',
+        'roleAdd', 'roleList', 'roleEdit', 'roleDelete',
+        'userAdd', 'userList', 'userEdit', 'userDelete',
+        'categoryAdd', 'categoryList', 'categoryEdit', 'categoryDelete',
+        'productAdd', 'productList', 'productEdit', 'productDelete',
+        'brandAdd', 'brandList', 'brandEdit', 'brandDelete',
+        'measurementAdd', 'measurementList', 'measurementEdit', 'measurementDelete',
+        'supplierAdd', 'supplierList', 'supplierEdit', 'supplierDelete',
+        'stockAdd', 'stockList', 'stockEdit', 'stockDelete', 'stockLevel',
+        'salesPOS', 'salesList',
+        'reportDailySalesList', 'reportWeeklySalesList', 'reportMonthlySalesList', 'reportConsolidatedSalesList',
+        'reportStockList', 'reportStockBalanceList', 'reportStockLowAlertList', 'reportStockAgingList',
+        'reportRevenueList', 'reportProfitLossList', 'reportExpenseList', 'reportSupplierList', 'reportTaxList',
+        'businessInfoSettings', 'appearanceSettings', 'emailSettings', 'securitySettings',
+        'applicationLogs'
+    ];
+    
+    // Delete existing permissions for role 1
+    \DB::table('permissions')->where('role_id', $roleId)->delete();
+    
+    // Insert new permissions
+    foreach ($menuList as $menu) {
+        \DB::table('permissions')->insert([
+            'role_id' => $roleId,
+            'menu' => $menu,
+            'created_by' => 1,
+            'updated_by' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+    
+    return response()->json(['message' => 'All permissions granted to Super Admin!', 'count' => count($menuList)]);
+});
