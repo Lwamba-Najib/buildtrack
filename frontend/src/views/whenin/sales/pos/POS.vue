@@ -26,9 +26,9 @@ const brands = ref([]);
 const measurements = ref([]);
 const redirectOption = ref("stay"); // Default to "stay"
 
-const alerts = reactive({ 
-    success: "", 
-    error: "" 
+const alerts = reactive({
+    success: "",
+    error: ""
 });
 
 const router = useRouter();
@@ -69,13 +69,12 @@ const fetchProductsInStock = async () => {
             },
         });
         products.value = response.data;
-        // Reset Select2 dropdowns
-        // $("#batchNumber").val("").trigger("change");
     } catch (error) {
         handleError(error); // Handle error
     }
 };
-// Fetch products from the backend
+
+// Fetch batch numbers for a given product
 const fetchBatchNumbersByProductId = async (productId) => {
     try {
         const token = getToken(); // Retrieve the token
@@ -86,12 +85,6 @@ const fetchBatchNumbersByProductId = async (productId) => {
         });
 
         batchNumbers.value = response.data;
-        selectedBatchNumber.value = "";
-        selectedBrandId.value = "";
-        selectedMeasurementId.value = ""; // Reset measurement field
-        salePrice.value = ""; // Reset sale price field
-        // Reset Select2 dropdowns
-        // $("#brand").val("").trigger("change");
     } catch (error) {
         handleError(error); // Handle error
     }
@@ -107,11 +100,6 @@ const fetchBrandsBybatchNumber = async (batchNumber) => {
             },
         });
         brands.value = response.data;
-        selectedBrandId.value = "";
-        selectedMeasurementId.value = ""; // Reset measurement field
-        salePrice.value = ""; // Reset sale price field
-        // Reset Select2 dropdown
-        // $("#measurement").val("").trigger("change");
     } catch (error) {
         handleError(error); // Handle error
     }
@@ -127,8 +115,6 @@ const fetchMeasurementsByBrandId = async (brandId) => {
             },
         });
         measurements.value = response.data;
-        selectedMeasurementId.value = ""; // Reset measurement field
-        salePrice.value = ""; // Reset sale price field        
     } catch (error) {
         handleError(error); // Handle error
     }
@@ -165,6 +151,51 @@ const fetchSalePrice = async () => {
     }
 };
 
+// --- Cascading select watchers (replaces the old jQuery/Select2 "change" handler) ---
+// selects are now plain v-model-bound <select> elements; Vue owns the DOM for them.
+watch(selectedProductId, (newVal) => {
+    selectedBatchNumber.value = "";
+    selectedBrandId.value = "";
+    selectedMeasurementId.value = "";
+    salePrice.value = "";
+    brands.value = [];
+    measurements.value = [];
+
+    if (newVal) {
+        fetchBatchNumbersByProductId(newVal);
+    } else {
+        batchNumbers.value = [];
+    }
+});
+
+watch(selectedBatchNumber, (newVal) => {
+    selectedBrandId.value = "";
+    selectedMeasurementId.value = "";
+    salePrice.value = "";
+    measurements.value = [];
+
+    if (newVal) {
+        fetchBrandsBybatchNumber(newVal);
+    } else {
+        brands.value = [];
+    }
+});
+
+watch(selectedBrandId, (newVal) => {
+    selectedMeasurementId.value = "";
+    salePrice.value = "";
+
+    if (newVal) {
+        fetchMeasurementsByBrandId(newVal);
+    } else {
+        measurements.value = [];
+    }
+});
+
+watch(selectedMeasurementId, () => {
+    fetchSalePrice();
+});
+
 // Add product to cart
 const addToCart = () => {
     const product = products.value.find((p) => p.id == selectedProductId.value); // Use == for loose comparison
@@ -172,7 +203,7 @@ const addToCart = () => {
     const brand = brands.value.find((b) => b.id == selectedBrandId.value); // Use == for loose comparison
     const measurement = measurements.value.find((m) => m.id == selectedMeasurementId.value); // Use == for loose comparison
 
-    if (product && brand && measurement && quantity.value > 0) {
+    if (product && batchNumber && brand && measurement && quantity.value > 0) {
         // Check if the product already exists in the cart
         const existingItem = cart.value.find(
             (item) =>
@@ -201,14 +232,8 @@ const addToCart = () => {
         selectedMeasurementId.value = "";
         salePrice.value = "";
         quantity.value = 1;
-
-        // Reset Select2 dropdowns
-        $("#product").val("").trigger("change");
-        $("#batchNumber").val("").trigger("change");
-        $("#brand").val("").trigger("change");
-        $("#measurement").val("").trigger("change");
     } else {
-        alerts.error = "Please select a valid product, brand, and measurement before adding to cart.";
+        alerts.error = "Please select a valid product, batch, brand, and measurement before adding to cart.";
     }
 };
 
@@ -245,7 +270,7 @@ const validateForm = () => {
     alerts.customerPhone = "";
     alerts.customerEmail = "";
     alerts.customerAddress = "";
-    alerts.paymentMethod ="";
+    alerts.paymentMethod = "";
 
     // Validate phone number field
 	if (!customerPhone.value) {
@@ -327,7 +352,7 @@ const processSale = async () => {
             }, 2000);
         } else {
             alerts.error = response.data.message || "An error occurred during submission.";
-        }        
+        }
     } catch (error) {
         handleError(error); // Handle error
     } finally {
@@ -338,55 +363,6 @@ const processSale = async () => {
 // Format currency
 const formatCurrency = (value) => {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "UGX" }).format(value);
-};
-// Initialize Select2 on all select fields
-const initializeSelect2 = () => {
-    $(function () {
-        // Apply Select2 to all select elements with the class "select"
-        $(".select")
-            .select2({
-                allowClear: true,
-                placeholder: "Select an option", // Placeholder for better UX
-            })
-            .on("change", function () {
-                const fieldName = $(this).attr("id"); // Get the ID of the select field
-                const newValue = $(this).val(); // Get the new value of the field
-
-                // Update the corresponding reactive variable
-                switch (fieldName) {
-                    case "product":
-                        selectedProductId.value = newValue || ""; // Use empty string if cleared
-                        fetchBatchNumbersByProductId(newValue); // Fetch batches when product changes
-                        break;
-                    case "batchNumber":
-                        selectedBatchNumber.value = newValue || ""; // Use empty string if cleared
-                        fetchBrandsBybatchNumber(newValue); // Fetch batch numbers when batchNumber changes
-                        break;
-                    case "brand":
-                        selectedBrandId.value = newValue || ""; // Use empty string if cleared
-                        fetchMeasurementsByBrandId(newValue); // Fetch measurements when brand changes
-                        break;
-                    case "measurement":
-                        selectedMeasurementId.value = newValue || ""; // Use empty string if cleared
-                        fetchSalePrice(); // Fetch sale price when measurement changes
-                        break;
-                    case "payment_method":
-                        paymentMethod.value = newValue || ""; // Use empty string if cleared
-                        break;
-                    default:
-                        console.warn(`Unhandled field: ${fieldName}`);
-                }
-            })
-            // Autofocus on the search field when dropdown opens
-            .on("select2:open", function () {
-                setTimeout(() => {
-                    let searchField = document.querySelector(".select2-container--open .select2-search__field");
-                    if (searchField) {
-                        searchField.focus();
-                    }
-                }, 50); // Slight delay to ensure input is available
-            });
-    });
 };
 
 // Initial data fetch
@@ -402,8 +378,6 @@ onMounted(() => {
     selectedMeasurementId.value = "";
     salePrice.value = "";
 
-    // Initialize Select2
-    initializeSelect2();
     // Fetch products
     fetchProductsInStock();
 });
@@ -482,7 +456,7 @@ watch(customerPhone, (newVal, oldVal) => {
                                             placeholder="Customer Name"
                                         />
                                         <!-- Display validation message -->
-										<div v-if="alerts.customerPhone" class="text-danger mt-2">
+										<div v-if="alerts.customerName" class="text-danger mt-2">
 											{{ alerts.customerName }}
 										</div>
                                     </div>
@@ -550,7 +524,7 @@ watch(customerPhone, (newVal, oldVal) => {
                                         <select
                                             v-model="selectedProductId"
                                             id="product"
-                                            class="form-select select"
+                                            class="form-select"
                                         >
                                             <option value="" disabled>Select product</option>
                                             <option
@@ -571,7 +545,7 @@ watch(customerPhone, (newVal, oldVal) => {
                                         <select
                                             v-model="selectedBatchNumber"
                                             id="batchNumber"
-                                            class="form-select select"
+                                            class="form-select"
                                             :disabled="!selectedProductId"
                                         >
                                             <option value="" disabled>Select batch</option>
@@ -593,7 +567,8 @@ watch(customerPhone, (newVal, oldVal) => {
                                         <select
                                             v-model="selectedBrandId"
                                             id="brand"
-                                            class="form-select select"
+                                            class="form-select"
+                                            :disabled="!selectedBatchNumber"
                                         >
                                             <option value="" disabled>Select brand</option>
                                             <option
@@ -613,7 +588,8 @@ watch(customerPhone, (newVal, oldVal) => {
                                         <select
                                             v-model="selectedMeasurementId"
                                             id="measurement"
-                                            class="form-select select"
+                                            class="form-select"
+                                            :disabled="!selectedBrandId"
                                         >
                                             <option value="" disabled>Select measurement</option>
                                             <option
@@ -661,7 +637,7 @@ watch(customerPhone, (newVal, oldVal) => {
                                         type="button"
                                         class="btn btn-primary w-100"
                                         @click="addToCart"
-                                        :disabled="!selectedProductId || !selectedBrandId || !selectedMeasurementId || !quantity"
+                                        :disabled="!selectedProductId || !selectedBatchNumber || !selectedBrandId || !selectedMeasurementId || !quantity"
                                     >
                                         <i class="bi bi-cart-plus"></i> Add Cart
                                     </button>
@@ -737,7 +713,7 @@ watch(customerPhone, (newVal, oldVal) => {
                                 <div class="col-lg-6 col-sm-12">
                                     <div class="mb-3">
                                         <label class="form-label">Payment Method</label>
-                                        <select v-model="paymentMethod" id="payment_method" class="form-select select">
+                                        <select v-model="paymentMethod" id="payment_method" class="form-select">
                                             <option value="CASH">Cash</option>
                                             <option value="MOBILE MONEY">Mobile Money</option>
                                             <option value="BANK">Bank</option>
@@ -752,7 +728,7 @@ watch(customerPhone, (newVal, oldVal) => {
                                         </div>
                                     </div>
                                 </div>
-                            </div>     
+                            </div>
                             <div class="row" v-if="redirectOption === 'invoice'">
                                 <div class="col-lg-12 col-sm-4 col-12">
                                     <div class="mb-3">
@@ -772,7 +748,7 @@ watch(customerPhone, (newVal, oldVal) => {
                                         </div>
                                     </div>
                                 </div>
-                            </div>                       
+                            </div>
                             <!-- Totals Display -->
                             <div class="row mt-4">
                                 <div class="col-12 text-end">
@@ -831,7 +807,7 @@ watch(customerPhone, (newVal, oldVal) => {
                                     </div>
                                 </div>
                             </div>
-                        </div>                        
+                        </div>
 
                         <!-- Footer with Action Buttons -->
                         <div class="card-footer">

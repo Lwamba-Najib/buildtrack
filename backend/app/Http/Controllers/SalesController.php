@@ -243,7 +243,7 @@ class SalesController extends Controller
 
             // Create the sale
             $sale = Sales::create([
-                'customer_name' => ucwords($validated['customerName']),
+                'customer_name' => ucwords($validated['customerName'] ?? ''),
                 'customer_phone' => $validated['customerPhone'],
                 'customer_email' => $validated['customerEmail'],
                 'customer_address' => $validated['customerAddress'],
@@ -257,6 +257,21 @@ class SalesController extends Controller
 
             // Create sale items
             foreach ($validated['items'] as $item) {
+
+            $stockCheck = StockBalance::where('product_id', $item['product']['id'])
+          ->where('brand_id', $item['brand']['id'])
+          ->where('measurement_id', $item['measurement']['id'])
+          ->where('batch_number', $item['batchNumber']['batch_number'])
+          ->first();
+
+          if (!$stockCheck || $stockCheck->balance < $item['quantity']) {
+          DB::rollBack();
+          return response()->json([
+               'success' => false,
+               'message' => 'Insufficient stock for ' . ($item['product']['name'] ?? 'an item') . '.',
+            ], 422);
+         }
+
                 SalesItem::create([
                     'sale_id' => $sale->id,
                     'product_id' => $item['product']['id'],
