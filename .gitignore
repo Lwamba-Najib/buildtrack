@@ -31,3 +31,4 @@ backend/.env
 backend/config/cors.php
 backend.zip
 .env copy
+.DS_Store
