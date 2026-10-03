@@ -160,9 +160,11 @@ watch(paginationSize, () => {
 });
 // Method to determine stock status
 const getStockStatus = (balance, minStockLevel) => {
-    if (balance <= 0) {
+    const safeBalance = Number(balance) || 0;
+    const safeMin = Number(minStockLevel) || 0;
+    if (safeBalance <= 0) {
         return { text: "Out of Stock", class: "badge bg-danger" };
-    } else if (balance <= minStockLevel) {
+    } else if (safeBalance <= safeMin) {
         return { text: "Low Stock", class: "badge bg-warning" };
     } else {
         return { text: "In Stock", class: "badge bg-success" };
@@ -355,12 +357,12 @@ const getStockStatus = (balance, minStockLevel) => {
 											<th scope="row">
 												{{ (pagination.currentPage - 1) * paginationSize + index + 1 }}
 											</th>
-											<td>{{ log.product.name || "N/A" }}</td>
+											<td>{{ log.product?.name || "N/A" }}</td>
 											<td>{{ log.batch_number || "N/A" }}</td>
-											<td>{{ log.brand.name || "N/A" }}</td>
-											<td>{{ log.measurement.name || "N/A" }}</td>
-											<td class="text-end">{{ Number(log.balance).toLocaleString() || 0 }}</td>
-											<td class="text-end">{{ Number(log.total_sold).toLocaleString() || 0 }}</td>
+											<td>{{ log.brand?.name || "N/A" }}</td>
+											<td>{{ log.measurement?.name || "N/A" }}</td>
+											<td class="text-end">{{ Number(log.balance ?? 0).toLocaleString() }}</td>
+											<td class="text-end">{{ Number(log.total_sold ?? 0).toLocaleString() }}</td>
 											<td>
 												<span :class="getStockStatus(log.balance, log.min_stock_level).class" class="badge">
 													{{ getStockStatus(log.balance, log.min_stock_level).text }}

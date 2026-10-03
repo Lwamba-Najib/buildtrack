@@ -10,6 +10,7 @@ class Sales extends Model
     use HasFactory;
 
     protected $fillable = [
+        'agent_id',
         'customer_name',
         'customer_phone',
         'customer_email',
@@ -30,5 +31,9 @@ class Sales extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+    public function agent()
+    {
+        return $this->belongsTo(Agent::class);
     }
 }
