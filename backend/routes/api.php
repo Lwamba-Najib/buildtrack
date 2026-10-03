@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\AgentController;
+use App\Http\Controllers\ConsignmentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\SalesController;
@@ -175,6 +177,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('getsalepriceinstock', [SalesController::class, 'getSalePriceInstock']);
     Route::post('salesstore', [SalesController::class, 'store']);
 
+    // Agents
+    Route::get('agentlist', [AgentController::class, 'index']);
+    Route::post('agentstore', [AgentController::class, 'store']);
+    Route::get('agentshow/{agent}', [AgentController::class, 'show']);
+    Route::put('agentupdate/{agent}', [AgentController::class, 'update']);
+    Route::delete('agentdelete/{agent}', [AgentController::class, 'destroy']);
+    Route::get('getagents', [AgentController::class, 'getAgents']);
+
+    // Consignments
+    Route::get('consignmentlist', [ConsignmentController::class, 'index']);
+    Route::post('consignmentstore', [ConsignmentController::class, 'store']);
+    Route::get('consignmentshow/{consignment}', [ConsignmentController::class, 'show']);
+    Route::put('consignmentapprove/{consignment}', [ConsignmentController::class, 'approve']);
+    Route::put('consignmentreject/{consignment}', [ConsignmentController::class, 'reject']);
+    Route::post('consignmentreconcile/{consignment}', [ConsignmentController::class, 'reconcile']);
+    Route::get('consignmentoutstanding', [ConsignmentController::class, 'outstanding']);
+
     //Report Daily Sales
     Route::get('reportdailysaleslist', [ReportDailySalesController::class, 'index']);
     Route::get('reportdailysalesxlsx', [ReportDailySalesController::class, 'xlsx']);
@@ -185,15 +204,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('reportweeklysalesxlsx', [ReportWeeklySalesController::class, 'xlsx']);
     Route::get('reportweeklysalescsv', [ReportWeeklySalesController::class, 'csv']);
 
-    //Report Monthly Sales
-    Route::get('reportmonthlysaleslist', [ReportMonthlySalesController::class, 'index']);
-    Route::get('reportmonthlysalesxlsx', [ReportMonthlySalesController::class, 'xlsx']);
-    Route::get('reportmonthlysalescsv', [ReportMonthlySalesController::class, 'csv']);
-
     //Report Consolidated Sales
     Route::get('reportconsolidatedsaleslist', [ReportConsolidatedSalesController::class, 'index']);
     Route::get('reportConsolidatedsalesxlsx', [ReportConsolidatedSalesController::class, 'xlsx']);
     Route::get('reportconsolidatedsalescsv', [ReportConsolidatedSalesController::class, 'csv']);
+
+    //Report Monthly Sales
+    Route::get('reportmonthlysaleslist', [ReportMonthlySalesController::class, 'index']);
+    Route::get('reportmonthlysalesxlsx', [ReportMonthlySalesController::class, 'xlsx']);
+    Route::get('reportmonthlysalescsv', [ReportMonthlySalesController::class, 'csv']);
 
     //Report Stock
     Route::get('reportstocklist', [ReportStockController::class, 'index']);
@@ -246,187 +265,4 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('applicationlog/{applicationlog}', [ApplicationLogController::class, 'show']);
     Route::get('applicationlogxlsx/{applicationlog}', [ApplicationLogController::class, 'xlsx']);
     Route::get('applicationlogcsv/{applicationlog}', [ApplicationLogController::class, 'csv']);
-});
-
-// TEMPORARY ROUTE TO CREATE ADMIN USER - DELETE THIS AFTER USE
-use Illuminate\Support\Facades\Hash;
-
-Route::get('/setup-admin', function () {
-    $existingUser = \App\Models\User::where('email', 'admin@example.com')->first();
-    
-    if ($existingUser) {
-        return response()->json(['message' => 'Admin user already exists!']);
-    }
-
-    $user = new \App\Models\User();
-    $user->name = 'Admin';
-    $user->email = 'admin@example.com';
-    $user->password = Hash::make('password');
-    $user->save();
-
-    return response()->json(['message' => 'Success! Admin user created. You can now delete this route.']);
-});
-
-// TEMPORARY DEBUG ROUTE - DELETE AFTER USE
-Route::get('/debug-user', function () {
-    $user = \App\Models\User::where('email', 'admin@example.com')->first();
-    
-    if (!$user) {
-        return response()->json(['error' => 'User not found']);
-    }
-    
-    return response()->json([
-        'user' => [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'user_number' => $user->user_number,
-            'role_id' => $user->role_id,
-            'environment' => $user->environment,
-            'is_locked' => $user->is_locked,
-            'password_hash' => substr($user->password, 0, 20) . '...',
-        ],
-        'password_verify' => password_verify('password', $user->password),
-    ]);
-});
-
-// TEMPORARY: Reset admin password
-Route::get('/reset-password', function () {
-    $user = \App\Models\User::where('email', 'admin@example.com')->first();
-    
-    if ($user) {
-        $user->password = bcrypt('password');
-        $user->save();
-        
-        return response()->json([
-            'message' => 'Password reset successfully!',
-            'new_verify' => password_verify('password', $user->password)
-        ]);
-    }
-    
-    return response()->json(['error' => 'User not found']);
-});
-
-// TEMPORARY: Grant all menu permissions to Super Admin
-Route::get('/grant-all-permissions', function () {
-    // Get the Super Admin role (id = 1)
-    $roleId = 1;
-    
-    // Get all menu keys from permissions.php
-    $allMenus = \App\Models\Permission::all(); // This might fail if table is empty
-    
-    // Alternative: Just create permissions for all common menus
-    $menuList = [
-        'dashboard', 'trash',
-        'roleAdd', 'roleList', 'roleEdit', 'roleDelete',
-        'userAdd', 'userList', 'userEdit', 'userDelete',
-        'categoryAdd', 'categoryList', 'categoryEdit', 'categoryDelete',
-        'productAdd', 'productList', 'productEdit', 'productDelete',
-        'brandAdd', 'brandList', 'brandEdit', 'brandDelete',
-        'measurementAdd', 'measurementList', 'measurementEdit', 'measurementDelete',
-        'supplierAdd', 'supplierList', 'supplierEdit', 'supplierDelete',
-        'stockAdd', 'stockList', 'stockEdit', 'stockDelete', 'stockLevel',
-        'salesPOS', 'salesList',
-        'reportDailySalesList', 'reportWeeklySalesList', 'reportMonthlySalesList', 'reportConsolidatedSalesList',
-        'reportStockList', 'reportStockBalanceList', 'reportStockLowAlertList', 'reportStockAgingList',
-        'reportRevenueList', 'reportProfitLossList', 'reportExpenseList', 'reportSupplierList', 'reportTaxList',
-        'businessInfoSettings', 'appearanceSettings', 'emailSettings', 'securitySettings',
-        'applicationLogs'
-    ];
-    
-    // Delete existing permissions for role 1
-    \DB::table('permissions')->where('role_id', $roleId)->delete();
-    
-    // Insert new permissions
-    foreach ($menuList as $menu) {
-        \DB::table('permissions')->insert([
-            'role_id' => $roleId,
-            'menu' => $menu,
-            'created_by' => 1,
-            'updated_by' => 1,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-    }
-    
-    return response()->json(['message' => 'All permissions granted to Super Admin!', 'count' => count($menuList)]);
-});
-
-// TEMPORARY: Debug database query directly
-Route::get('/debug-menus-query', function () {
-    try {
-        // We know your admin user is role_id 1
-        $roleId = 1;
-        
-        // Count how many permissions exist for role 1
-        $total = \DB::table('permissions')->where('role_id', $roleId)->count();
-        
-        // Try to fetch the menu names
-        $menus = \DB::table('permissions')->where('role_id', $roleId)->pluck('menu')->toArray();
-        
-        return response()->json([
-            'status' => 'success',
-            'total_permissions' => $total,
-            'menus_found' => $menus
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine()
-        ], 500);
-    }
-});
-
-// TEMPORARY: Debug the exact Eloquent query used in the controller
-Route::get('/debug-access-menu', function () {
-    try {
-        $roleId = 1;
-        // Use a small sample of keys to test
-        $menuArray = ['dashboard', 'trash', 'roleList', 'userList']; 
-        
-        // This mimics exactly what the PermissionController does
-        $accessibleMenus = \App\Models\Permission::where('role_id', $roleId)
-            ->whereIn('menu', $menuArray)
-            ->pluck('menu')
-            ->toArray();
-            
-        return response()->json(['success' => true, 'data' => $accessibleMenus]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false, 
-            'error' => $e->getMessage(), 
-            'file' => $e->getFile(), 
-            'line' => $e->getLine()
-        ], 500);
-    }
-});
-
-// TEMPORARY: Test accessMenu with hardcoded role
-Route::get('/test-access-menu-hardcoded', function () {
-    try {
-        // Hardcode role_id = 1 (Super Admin) instead of getting from auth
-        $roleId = 1;
-        
-        // Get the menu array from the request (or use defaults)
-        $menuArray = ['dashboard', 'trash', 'roleList', 'userList', 'productList', 'salesPOS', 'salesList'];
-        
-        // Query permissions table
-        $accessibleMenus = \App\Models\Permission::where('role_id', $roleId)
-            ->whereIn('menu', $menuArray)
-            ->pluck('menu')
-            ->toArray();
-        
-        return response()->json([
-            'success' => true,
-            'hasAccess' => $accessibleMenus,
-            'role_id_used' => $roleId,
-        ], 200);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'An error occurred while checking access: ' . $e->getMessage(),
-        ], 500);
-    }
 });
